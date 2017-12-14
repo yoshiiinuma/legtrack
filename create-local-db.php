@@ -14,5 +14,6 @@ $db->configure($GLOBALS);
 $db->connect();
 
 $db->query(LocalMeasure::CREATE_MEASURES_TABLE_SQL);
+$db->query(LocalMeasure::CREATE_MEASURES_INDEX_SQL);
 
 ?>

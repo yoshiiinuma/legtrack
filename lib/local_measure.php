@@ -3,6 +3,7 @@ namespace legtrack;
 use \PDO;
 
 //FIXME Should extend PDO?
+//      Seperate lower PDO wrapper part from higher Model part
 class LocalMeasure {
   private $conn;
   private $user;
@@ -39,7 +40,18 @@ class LocalMeasure {
     );
 HERE;
 
+  const CREATE_MEASURES_INDEX_SQL = <<<HERE
+    CREATE INDEX measures_lastupdated_idx ON measures(lastUpdated);
+HERE;
+
   const SELECT_MEASURE_SQL = <<<HERE
+     SELECT * FROM measures
+      WHERE year = :year
+        AND measureType = :measureType
+        AND measureNumber = :measureNumber;
+HERE;
+
+  const SELECT_UPDATED_SQL = <<<HERE
      SELECT * FROM measures
       WHERE year = :year
         AND measureType = :measureType
@@ -94,8 +106,8 @@ HERE;
     try {
       $opts = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+        PDO::ATTR_EMULATE_PREPARES => FALSE,
       ];
       $this->error = NULL;
       $this->conn = new PDO($dns, $user, $pass, $opts);
