@@ -1,0 +1,9 @@
+*.swp
+*.bkup
+*.deleteme
+*.log
+config/production.php
+config/development.php
+config/test.php
+*.db
+results/*.html
