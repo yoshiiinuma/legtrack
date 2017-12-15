@@ -15,7 +15,7 @@ if ($argc < 1 || $argc > 2) {
   exit();
 }
 
-$env = $argv[1] || 'development';
+$env = ($argc == 2) ? $argv[1]: 'development';
 loadEnv($env);
 
 $db = new RemoteMysql();

@@ -8,11 +8,10 @@ class RemoteMysql extends DbBase {
   private $host;
   private $dbname;
 
-//  const DROP_MEASURES_TABLE_SQL = "DROP TABLE IF EXISTS measures;";
-
   const CREATE_MEASURES_TABLE_SQL = <<<HERE
     CREATE TABLE IF NOT EXISTS measures
     (
+      id int unsigned NOT NULL AUTO_INCREMENT,
       year smallint NOT NULL,
       measureType char(3) NOT NULL,
       measureNumber smallint NOT NULL,
@@ -28,7 +27,8 @@ class RemoteMysql extends DbBase {
       introducer varchar(512),
       currentReferral varchar(256),
       companion varchar(256),
-      PRIMARY KEY (year, measureType, measureNumber)
+      PRIMARY KEY (id),
+      UNIQUE (year, measureType, measureNumber)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 HERE;
 
@@ -60,10 +60,6 @@ HERE;
         companion = :companion2
       ;
 HERE;
-
-  public function setPath($path) {
-    $this->path = $path;
-  }
 
   public function configure($conf) {
     $this->user = $conf['MYSQL_USER'];

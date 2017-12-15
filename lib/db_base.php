@@ -85,13 +85,43 @@ HERE;
     $this->ready = FALSE;
   }
 
+  //Override
   public function configure($conf) {
     die("Must Implement in subclass!");
   }
 
+  //Override
   public function getDns() {
-    //return "sqlite:".$this->path;
     die("Must Implement in subclass!");
+  }
+
+  //Override if necessary
+  protected function getConnectionOptions() {
+      return [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+      ];
+  }
+
+  //Override if necessary
+  protected function createSqlArgs($year, $type, $r) {
+    return array(
+        ':measureType' => $type,
+        ':year' => $year,
+        ':measureNumber' => $r->measureNumber,
+        ':lastUpdated' => Date("Y-m-d H:i:s"),
+        ':code' => $r->code  ,
+        ':measurePdfUrl' => $r->measurePdfUrl,
+        ':measureArchiveUrl' => $r->measureArchiveUrl,
+        ':measureTitle' => $r->measureTitle,
+        ':reportTitle' => $r->reportTitle,
+        ':bitAppropriation' => $r->bitAppropriation,
+        ':description' => $r->description,
+        ':status' => $r->status,
+        ':introducer' => $r->introducer,
+        ':currentReferral' => $r->currentReferral,
+        ':companion' => $r->companion,
+    );
   }
 
   public function connect() {
@@ -108,11 +138,7 @@ HERE;
 
   public function connectManually($dns, $user, $pass) {
     try {
-      $opts = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
-        PDO::ATTR_EMULATE_PREPARES => FALSE,
-      ];
+      $opts = $this->getConnectionOptions();
       $this->error = NULL;
       $this->conn = new PDO($dns, $user, $pass, $opts);
       return ($this->conn) ? TRUE : FALSE;
@@ -266,26 +292,6 @@ HERE;
     }
     $this->error = $this->insertMeasureSql->errorInfo();
     return NULL;
-  }
-
-  protected function createSqlArgs($year, $type, $r) {
-    return array(
-        ':measureType' => $type,
-        ':year' => $year,
-        ':measureNumber' => $r->measureNumber,
-        ':lastUpdated' => Date("Y-m-d H:i:s"),
-        ':code' => $r->code  ,
-        ':measurePdfUrl' => $r->measurePdfUrl,
-        ':measureArchiveUrl' => $r->measureArchiveUrl,
-        ':measureTitle' => $r->measureTitle,
-        ':reportTitle' => $r->reportTitle,
-        ':bitAppropriation' => $r->bitAppropriation,
-        ':description' => $r->description,
-        ':status' => $r->status,
-        ':introducer' => $r->introducer,
-        ':currentReferral' => $r->currentReferral,
-        ':companion' => $r->companion,
-    );
   }
 
   public function getMeasureCount() {
