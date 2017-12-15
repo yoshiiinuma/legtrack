@@ -1,13 +1,11 @@
 <?php
 namespace legtrack;
 
-require_once '../lib/functions.php';
-require_once '../lib/local_measure.php';
-require_once '../lib/measure_parser.php';
+require_once 'lib/functions.php';
+require_once 'lib/local_measure.php';
+require_once 'lib/measure_parser.php';
 
-$env = 'test';
-
-loadConfig('../config/test.php');
+loadConfig('config/test.php');
 
 function setup($r) {
   $r->db = new LocalMeasure();
@@ -119,6 +117,8 @@ setup($cxt);
 
 if (!insertData($cxt)) stop($cxt, "insertData Failed\n");
 if (!testInsertData($cxt)) stop($cxt, "testInsertData Failed\n");
+
+sleep(11);
 
 if (!updateData($cxt)) stop($cxt, "updateData Failed\n");
 if (!testUpdateData($cxt)) stop($cxt, "testUpdateData Failed\n");

@@ -2,8 +2,8 @@
 
 namespace legtrack;
 
-require_once './lib/functions.php';
-require_once './lib/local_measure.php';
+require_once 'lib/functions.php';
+require_once 'lib/local_measure.php';
 
 $env = 'development';
 
