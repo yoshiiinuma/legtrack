@@ -39,7 +39,7 @@ HERE;
       )
 HERE;
 
-  const INSERT_MEASURE_SQL = <<<HERE
+  const UPSERT_MEASURE_SQL = <<<HERE
     IF EXISTS (SELECT 1 FROM measures WHERE year = :year1 AND measureType = :measureType1 AND measureNumber = :measureNumber1)
       UPDATE measures
         SET lastUpdated = :lastUpdated2,
@@ -84,9 +84,9 @@ HERE;
     return $this->dsn;
   }
 
-  protected function createSqlArgs($year, $type, $r) {
+  protected function createUpsertArgs($year, $type, $r) {
     return array_merge(
-      parent::createSqlArgs($year, $type, $r),
+      parent::createUpsertArgs($year, $type, $r),
       array(
         ':measureType1' => $type,
         ':year1' => $year,

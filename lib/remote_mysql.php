@@ -36,7 +36,7 @@ HERE;
     CREATE INDEX measures_lastupdated_idx ON measures(lastUpdated);
 HERE;
 
-  const INSERT_MEASURE_SQL = <<<HERE
+  const UPSERT_MEASURE_SQL = <<<HERE
      INSERT INTO measures (
         measureType, year, measureNumber, lastUpdated, code, measurePdfUrl,
         measureArchiveUrl, measureTitle, reportTitle, bitAppropriation,
@@ -77,9 +77,9 @@ HERE;
     return "mysql:host=" . $this->host . ';dbname=' . $this->dbname;
   }
 
-  protected function createSqlArgs($year, $type, $r) {
+  protected function createUpsertArgs($year, $type, $r) {
     return array_merge(
-      parent::createSqlArgs($year, $type, $r),
+      parent::createUpsertArgs($year, $type, $r),
       array(
         ':lastUpdated2' => Date("Y-m-d H:i:s"),
         ':code2' => $r->code  ,

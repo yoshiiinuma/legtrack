@@ -10,6 +10,7 @@ class DbBase {
   protected $ready;
   protected $insertMeasureSql;
   protected $updateMeasureSql;
+  protected $upsertMeasureSql;
   protected $selectMeasureSql;
   protected $selectUpdatedSql;
 
@@ -81,6 +82,17 @@ HERE;
         :description, :status, :introducer, :currentReferral, :companion)
 HERE;
 
+  const UPSERT_MEASURE_SQL = <<<HERE
+     INSERT OR REPLACE INTO measures (
+        measureType, year, measureNumber, lastUpdated, code, measurePdfUrl,
+        measureArchiveUrl, measureTitle, reportTitle, bitAppropriation,
+        description, status, introducer, currentReferral, companion)
+     VALUES (
+        :measureType, :year, :measureNumber, :lastUpdated, :code, :measurePdfUrl,
+        :measureArchiveUrl, :measureTitle, :reportTitle, :bitAppropriation,
+        :description, :status, :introducer, :currentReferral, :companion)
+HERE;
+
   public function __construct() {
     $this->ready = FALSE;
   }
@@ -103,7 +115,6 @@ HERE;
       ];
   }
 
-  //Override if necessary
   protected function createSqlArgs($year, $type, $r) {
     return array(
         ':measureType' => $type,
@@ -122,6 +133,21 @@ HERE;
         ':currentReferral' => $r->currentReferral,
         ':companion' => $r->companion,
     );
+  }
+
+  //Override if necessary
+  protected function createUpsertArgs($year, $type, $r) {
+    return $this->createSqlArgs($year, $type, $r);
+  }
+
+  //Override if necessary
+  protected function createUpdateArgs($year, $type, $r) {
+    return $this->createSqlArgs($year, $type, $r);
+  }
+
+  //Override if necessary
+  protected function createInsertArgs($year, $type, $r) {
+    return $this->createSqlArgs($year, $type, $r);
   }
 
   public function connect() {
@@ -153,6 +179,8 @@ HERE;
 
   public function setup() {
     if (!$this->ready) {
+      $this->upsertMeasureSql = $this->prepare(static::UPSERT_MEASURE_SQL);
+      if (!$this->upsertMeasureSql) { die('UPSERT Measure SQL Preparation Failed' . PHP_EOL); }
       $this->insertMeasureSql = $this->prepare(static::INSERT_MEASURE_SQL);
       if (!$this->insertMeasureSql) { die('INSERT Measure SQL Preparation Failed' . PHP_EOL); }
       $this->updateMeasureSql = $this->prepare(static::UPDATE_MEASURE_SQL);
@@ -163,19 +191,6 @@ HERE;
       if (!$this->selectUpdatedSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
       $this->ready = TRUE;
     }
-  }
-
-  public function upsertMeasure($year, $type, $r) {
-    $this->setup();
-    $cur = $this->selectMeasure($year, $type, $r);
-    if ($cur) {
-      if (!$this->compare($cur, $r)) {
-        return $this->updateMeasure($year, $type, $r);
-      }
-    } else {
-      return $this->insertMeasure($year, $type, $r);
-    }
-    return FALSE;
   }
 
   public function compare($a, $b) {
@@ -272,10 +287,34 @@ HERE;
     return NULL;
   }
 
+  public function upsertMeasureOld($year, $type, $r) {
+    $this->setup();
+    $cur = $this->selectMeasure($year, $type, $r);
+    if ($cur) {
+      if (!$this->compare($cur, $r)) {
+        return $this->updateMeasure($year, $type, $r);
+      }
+    } else {
+      return $this->insertMeasure($year, $type, $r);
+    }
+    return FALSE;
+  }
+
+  public function upsertMeasure($year, $type, $r) {
+    $this->setup();
+    if (!$this->upsertMeasureSql) die('No SQL Prepared' . PHP_EOL);
+    $args = $this->createUpsertArgs($year, $type, $r);
+    if ($this->exec($this->upsertMeasureSql, $args)) {
+      return TRUE;
+    }
+    $this->error = $this->upsertMeasureSql->errorInfo();
+    return NULL;
+  }
+
   public function updateMeasure($year, $type, $r) {
     $this->setup();
     if (!$this->updateMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = $this->createSqlArgs($year, $type, $r);
+    $args = $this->createUpdateArgs($year, $type, $r);
     if ($this->exec($this->updateMeasureSql, $args)) {
       return TRUE;
     }
@@ -286,7 +325,7 @@ HERE;
   public function insertMeasure($year, $type, $r) {
     $this->setup();
     if (!$this->insertMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = $this->createSqlArgs($year, $type, $r);
+    $args = $this->createInsertArgs($year, $type, $r);
     if ($this->exec($this->insertMeasureSql, $args)) {
       return TRUE;
     }

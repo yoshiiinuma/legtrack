@@ -15,16 +15,13 @@ $local->connect();
 $time = '2017-12-14 15:01:00';
 $updated = $local->selectUpdated($time);
 
-$year = 2017;
-$type = 'hr';
-
 $mysql = new RemoteMysql();
 $mysql->configure($GLOBALS);
 $mysql->connect();
 
 foreach($updated as $r) {
   print_r($r);
-  $mysql->insertMeasure($year, $type, $r);
+  $mysql->upsertMeasure($r->year, $r->measureType, $r);
 }
 
 ?>

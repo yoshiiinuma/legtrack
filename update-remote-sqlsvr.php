@@ -24,7 +24,7 @@ $sqlsvr->connect();
 
 foreach($updated as $r) {
   print_r($r);
-  $sqlsvr->insertMeasure($year, $type, $r);
+  $sqlsvr->upsertMeasure($year, $type, $r);
 }
 
 ?>

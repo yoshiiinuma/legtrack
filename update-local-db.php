@@ -55,7 +55,7 @@ if ($argc == 6) {
 $year = $argv[1];
 $measure = $argv[2];
 $file = $argv[3];
-$env = $argv[4] || 'development';
+$env = ($argc > 4) ? $argv[4] : 'development';
 
 if (!file_exist($file)) {
   die('File Not Found: ' . $file . PHP_EOL);
@@ -72,7 +72,8 @@ $db->configure($GLOBALS);
 $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
 
 while ($parser->hasNext()) {
-  $db->upsertMeasure($year, $type, $parser->getNext());
+  $r = $parser->getNext();
+  $db->upsertMeasure($year, $type, $r);
 }
 
 $db->close();
