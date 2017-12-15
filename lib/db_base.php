@@ -8,6 +8,7 @@ class DbBase {
   protected $user;
   protected $error;
   protected $ready;
+  protected $rowAffected;
   protected $insertMeasureSql;
   protected $updateMeasureSql;
   protected $upsertMeasureSql;
@@ -95,6 +96,7 @@ HERE;
 
   public function __construct() {
     $this->ready = FALSE;
+    $this->rowAffected = 0;
   }
 
   //Override
@@ -151,7 +153,11 @@ HERE;
   }
 
   public function connect() {
-    return $this->connectManually($this->getDns(), $this->user, $this->pass);
+    $r = $this->connectManually($this->getDns(), $this->user, $this->pass);
+    if ($r) {
+      $this->setup();
+    }
+    return $r;
   }
 
   public function close() {
@@ -287,8 +293,7 @@ HERE;
     return NULL;
   }
 
-  public function upsertMeasureOld($year, $type, $r) {
-    $this->setup();
+  public function upsertMeasureIfOnlyUpdated($year, $type, $r) {
     $cur = $this->selectMeasure($year, $type, $r);
     if ($cur) {
       if (!$this->compare($cur, $r)) {
@@ -301,10 +306,10 @@ HERE;
   }
 
   public function upsertMeasure($year, $type, $r) {
-    $this->setup();
     if (!$this->upsertMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createUpsertArgs($year, $type, $r);
     if ($this->exec($this->upsertMeasureSql, $args)) {
+      $this->rowAffected += $this->upsertMeasureSql->rowCount();
       return TRUE;
     }
     $this->error = $this->upsertMeasureSql->errorInfo();
@@ -312,10 +317,10 @@ HERE;
   }
 
   public function updateMeasure($year, $type, $r) {
-    $this->setup();
     if (!$this->updateMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createUpdateArgs($year, $type, $r);
     if ($this->exec($this->updateMeasureSql, $args)) {
+      $this->rowAffected += $this->updateMeasureSql->rowCount();
       return TRUE;
     }
     $this->error = $this->updateMeasureSql->errorInfo();
@@ -323,14 +328,18 @@ HERE;
   }
 
   public function insertMeasure($year, $type, $r) {
-    $this->setup();
     if (!$this->insertMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createInsertArgs($year, $type, $r);
     if ($this->exec($this->insertMeasureSql, $args)) {
+      $this->rowAffected += $this->insertMeasureSql->rowCount();
       return TRUE;
     }
     $this->error = $this->insertMeasureSql->errorInfo();
     return NULL;
+  }
+
+  public function getRowAffected() {
+    return $this->rowAffected;
   }
 
   public function getMeasureCount() {
@@ -364,7 +373,6 @@ HERE;
     if (!$sql) die('No SQL Prepared' . PHP_EOL);
     $this->error = NULL;
 
-    print_r($args);
     try {
       $sql->execute($args);
       return true;

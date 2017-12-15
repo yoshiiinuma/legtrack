@@ -73,7 +73,7 @@ $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
 
 while ($parser->hasNext()) {
   $r = $parser->getNext();
-  $db->upsertMeasure($year, $type, $r);
+  $db->upsertMeasureIfOnlyUpdated($year, $type, $r);
 }
 
 $db->close();

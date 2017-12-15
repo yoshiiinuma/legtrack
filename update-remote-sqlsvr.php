@@ -22,9 +22,12 @@ $sqlsvr = new RemoteSqlsvr();
 $sqlsvr->configure($GLOBALS);
 $sqlsvr->connect();
 
+$cnt = 0;
 foreach($updated as $r) {
   print_r($r);
+  $cnt++;
   $sqlsvr->upsertMeasure($year, $type, $r);
 }
 
+print "\n" . $cnt . " rows selected => " . $sqlsvr->getRowAffected() . " rows updated\n";
 ?>

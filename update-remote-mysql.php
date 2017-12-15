@@ -19,9 +19,12 @@ $mysql = new RemoteMysql();
 $mysql->configure($GLOBALS);
 $mysql->connect();
 
+$cnt = 0;
 foreach($updated as $r) {
   print_r($r);
+  $cnt++;
   $mysql->upsertMeasure($r->year, $r->measureType, $r);
 }
 
+print "\n" . $cnt . " rows selected => " . $mysql->getRowAffected() . " rows updated\n";
 ?>
