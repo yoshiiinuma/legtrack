@@ -249,23 +249,7 @@ HERE;
   public function updateMeasure($year, $type, $r) {
     $this->setup();
     if (!$this->updateMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = array(
-        ':measureType' => $type,
-        ':year' => $year,
-        ':measureNumber' => $r->measureNumber,
-        ':lastUpdated' => Date("Y-m-d H:i:s"),
-        ':code' => $r->code  ,
-        ':measurePdfUrl' => $r->measurePdfUrl,
-        ':measureArchiveUrl' => $r->measureArchiveUrl,
-        ':measureTitle' => $r->measureTitle,
-        ':reportTitle' => $r->reportTitle,
-        ':bitAppropriation' => $r->bitAppropriation,
-        ':description' => $r->description,
-        ':status' => $r->status,
-        ':introducer' => $r->introducer,
-        ':currentReferral' => $r->currentReferral,
-        ':companion' => $r->companion,
-    );
+    $args = $this->createSqlArgs($year, $type, $r);
     if ($this->exec($this->updateMeasureSql, $args)) {
       return TRUE;
     }
@@ -276,7 +260,16 @@ HERE;
   public function insertMeasure($year, $type, $r) {
     $this->setup();
     if (!$this->insertMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = array(
+    $args = $this->createSqlArgs($year, $type, $r);
+    if ($this->exec($this->insertMeasureSql, $args)) {
+      return TRUE;
+    }
+    $this->error = $this->insertMeasureSql->errorInfo();
+    return NULL;
+  }
+
+  protected function createSqlArgs($year, $type, $r) {
+    return array(
         ':measureType' => $type,
         ':year' => $year,
         ':measureNumber' => $r->measureNumber,
@@ -293,11 +286,6 @@ HERE;
         ':currentReferral' => $r->currentReferral,
         ':companion' => $r->companion,
     );
-    if ($this->exec($this->insertMeasureSql, $args)) {
-      return TRUE;
-    }
-    $this->error = $this->insertMeasureSql->errorInfo();
-    return NULL;
   }
 
   public function getMeasureCount() {
@@ -331,6 +319,7 @@ HERE;
     if (!$sql) die('No SQL Prepared' . PHP_EOL);
     $this->error = NULL;
 
+    print_r($args);
     try {
       $sql->execute($args);
       return true;

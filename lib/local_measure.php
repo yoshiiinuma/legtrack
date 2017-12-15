@@ -5,7 +5,6 @@ use \PDO;
 require_once 'lib/db_base.php';
 
 class LocalMeasure extends DbBase {
-  private $dns;
   private $path;
 
 //  const DROP_MEASURES_TABLE_SQL = "DROP TABLE IF EXISTS measures;";
