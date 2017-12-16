@@ -157,6 +157,14 @@ HERE;
     return $r;
   }
 
+  public function beginTransaction() {
+    $this->conn->beginTransaction();
+  }
+
+  public function commit() {
+    $this->conn->commit();
+  }
+
   public function close() {
     $this->conn = NULL;
   }
@@ -170,13 +178,14 @@ HERE;
       $opts = $this->getConnectionOptions();
       $this->error = NULL;
       $this->conn = new PDO($dns, $user, $pass, $opts);
-      return ($this->conn) ? TRUE : FALSE;
+      if ($this->conn) {
+        return TRUE;
+      }
     } catch (PDOException $e) {
       print($e->getMessage() . PHP_EOL);
       print_r($e);
       $this->error = $e;
     }
-
     return false;
   }
 
@@ -310,6 +319,7 @@ HERE;
   }
 
   public function upsertMeasureIfOnlyUpdated($year, $type, $r) {
+    $this->setup_statements();
     $cur = $this->selectMeasure($year, $type, $r);
     if ($cur) {
       if (!$this->compare($cur, $r)) {
@@ -322,6 +332,7 @@ HERE;
   }
 
   public function upsertMeasure($year, $type, $r) {
+    $this->setup_statements();
     if (!$this->upsertMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createUpsertArgs($year, $type, $r);
     if ($this->exec($this->upsertMeasureSql, $args)) {
@@ -333,6 +344,7 @@ HERE;
   }
 
   public function updateMeasure($year, $type, $r) {
+    $this->setup_statements();
     if (!$this->updateMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createUpdateArgs($year, $type, $r);
     if ($this->exec($this->updateMeasureSql, $args)) {
@@ -344,6 +356,7 @@ HERE;
   }
 
   public function insertMeasure($year, $type, $r) {
+    $this->setup_statements();
     if (!$this->insertMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createInsertArgs($year, $type, $r);
     if ($this->exec($this->insertMeasureSql, $args)) {
