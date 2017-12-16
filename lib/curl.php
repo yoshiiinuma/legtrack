@@ -109,6 +109,10 @@ class Curl {
     file_put_contents($file, $this->result);
   }
 
+  public function getResult() {
+    return $this->result;
+  }
+
   public function getMd5() {
     if (!$this->result) {
       die("Not Download Yet");

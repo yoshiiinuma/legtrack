@@ -7,6 +7,17 @@ require_once 'lib/db_base.php';
 class LocalMeasure extends DbBase {
   private $path;
 
+  const INSERT_MEASURE_SQL = <<<HERE
+     INSERT OR IGNORE INTO measures (
+        measureType, year, measureNumber, lastUpdated, code, measurePdfUrl,
+        measureArchiveUrl, measureTitle, reportTitle, bitAppropriation,
+        description, status, introducer, currentReferral, companion)
+     VALUES (
+        :measureType, :year, :measureNumber, :lastUpdated, :code, :measurePdfUrl,
+        :measureArchiveUrl, :measureTitle, :reportTitle, :bitAppropriation,
+        :description, :status, :introducer, :currentReferral, :companion)
+HERE;
+
   public function setPath($path) {
     $this->path = $path;
   }

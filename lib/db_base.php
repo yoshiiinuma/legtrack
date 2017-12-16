@@ -154,9 +154,6 @@ HERE;
 
   public function connect() {
     $r = $this->connectManually($this->getDns(), $this->user, $this->pass);
-    if ($r) {
-      $this->setup();
-    }
     return $r;
   }
 
@@ -183,7 +180,7 @@ HERE;
     return false;
   }
 
-  public function setup() {
+  public function setup_statements() {
     if (!$this->ready) {
       $this->upsertMeasureSql = $this->prepare(static::UPSERT_MEASURE_SQL);
       if (!$this->upsertMeasureSql) { die('UPSERT Measure SQL Preparation Failed' . PHP_EOL); }
@@ -258,7 +255,7 @@ HERE;
   }
 
   public function selectMeasures($year, $type) {
-    $this->setup();
+    $this->setup_statements();
     if ($this->query('SELECT * FROM measures;')) {
       return $this->sql->fetchAll(PDO::FETCH_OBJ);
     }
@@ -266,7 +263,7 @@ HERE;
   }
 
   public function selectUpdated($time) {
-    $this->setup();
+    $this->setup_statements();
     if (!$this->selectUpdatedSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':lastUpdated' => $time,
@@ -279,7 +276,7 @@ HERE;
   }
 
   public function selectMeasure($year, $type, $r) {
-    $this->setup();
+    $this->setup_statements();
     if (!$this->selectMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':measureType' => $type,
@@ -290,6 +287,25 @@ HERE;
       return $this->selectMeasureSql->fetchObject();
     }
     $this->error = $this->selectMeasureSql->errorInfo();
+    return NULL;
+  }
+
+  public function insertOrIgnoreAndUpdateMeasure($year, $type, $r) {
+    $this->setup_statements();
+    if (!$this->insertMeasureSql) die('No SQL Prepared' . PHP_EOL);
+    if (!$this->updateMeasureSql) die('No SQL Prepared' . PHP_EOL);
+    $args = $this->createInsertArgs($year, $type, $r);
+    if ($this->exec($this->insertMeasureSql, $args)) {
+      $this->rowAffected += $this->insertMeasureSql->rowCount();
+      if ($this->exec($this->updateMeasureSql, $args)) {
+        $this->rowAffected += $this->updateMeasureSql->rowCount();
+        return TRUE;
+      } else {
+        $this->error = $this->updateMeasureSql->errorInfo();
+      }
+    } else {
+      $this->error = $this->insertMeasureSql->errorInfo();
+    }
     return NULL;
   }
 
