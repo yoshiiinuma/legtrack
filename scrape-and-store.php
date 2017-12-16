@@ -47,8 +47,6 @@ function usage($argv) {
   echo "UASGE: php scrape-and-store.php [env] [year] [debug]\n\n";
 }
 
-$programStart = new DateTime();
-
 $dbg = FALSE;
 
 if ($argc < 1 || $argc > 4) {
@@ -68,6 +66,13 @@ $measureTypes = array('hb', 'sb', 'hr', 'sr', 'hcr', 'scr', 'gm');
 loadEnv($env);
 
 function checkCapitolSiteUpdate($year, $type, $dbg) {
+  $start = new DateTime();
+
+  $data = NULL;
+  $status = 'MATCHED';
+  $title = $year . ' ' . $type;
+  if (strlen($title) == 7) $title .= ' ';
+
   $curl = new Curl();
   $curl->debug = $dbg;
 
@@ -77,16 +82,20 @@ function checkCapitolSiteUpdate($year, $type, $dbg) {
   $curMd5 = (file_exists($dst)) ? md5_file($dst) : 'xxx';
   $newMd5 = $curl->getMd5();
 
-  if ($curMd5 == $newMd5) {
-    return NULL;
+  if ($curMd5 != $newMd5) {
+    $status = 'UPDATED';
+    $curl->saveResult($dst);
+    $data = $curl->getResult();
   } 
-  $curl->saveResult($dst);
-  return $curl->getResult();
+
+  print $title . " : " . $status . " => " . $dst . ' ' . elapsedTime($start);
+  return $data;
 }
 
 function updateLocalDb($year, $type, $data) {
+  $start = new DateTime();
+
   $parser = new MeasureParser();
-  //$parser->start(file_get_contents($data));
   $parser->start($data);
 
   $db = new LocalMeasure();
@@ -94,43 +103,42 @@ function updateLocalDb($year, $type, $data) {
   $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
 
   $cnt = 0;
+
   $db->beginTransaction();
   while ($parser->hasNext()) {
     $cnt++;
-    $r = $parser->getNext();
-    $db->upsertMeasureIfOnlyUpdated($year, $type, $r);
-    //$db->insertOrIgnoreAndUpdateMeasure($year, $type, $r);
-    //$db->insertMeasure($year, $type, $r);
-    //$db->updateMeasure($year, $type, $r);
+    $cur = $parser->getNext();
+    $db->upsertMeasureIfOnlyUpdated($year, $type, $cur);
+    //$db->insertOrIgnoreAndUpdateMeasure($year, $type, $cur);
+    //$db->insertMeasure($year, $type, $cur);
+    //$db->updateMeasure($year, $type, $cur);
   }
   $db->commit();
   $db->close();
-  print $db->getRowAffected() . '/' . $cnt . " Rows Updated";
+
+  print $db->getRowAffected() . '/' . $cnt . " Rows " . elapsedTime($start);
 }
 
+function elapsedTime($startTime) {
+  $elapsed = $startTime->diff(new DateTime());
+  return $elapsed->format("%i mins %s secs");
+}
+
+$programStart = new DateTime();
+
 foreach ($measureTypes as $type) {
-  $downloadStart = new DateTime();
-  $dst = getResultPath($year, $type);
-  $status = 'MATCHED';
   $data = checkCapitolSiteUpdate($year, $type, $dbg);
-  $status = ($data) ? 'UPDATED' : 'MATCHED';
-  $elapsed = $downloadStart->diff(new DateTime());
-  $title = $year . ' ' . $type;
-  if (strlen($title) == 7) $title .= ' ';
-  print $title . " : " . $status . " => " . $dst;
-  print "  " . $elapsed->format("%i mins %s secs");
-  print " => DB UPDATE ";
+
+
   if ($data) {
-    $dbUpdateStart = new DateTime();
+    print " => DB UPDATE ";
     updateLocalDb($year, $type, $data);
-    //updateLocalDb($year, $type, $dst);
-    $elapsed = $dbUpdateStart->diff(new DateTime());
-    print "  " . $elapsed->format("%i mins %s secs") . PHP_EOL;
+    print "\n";
   } else {
-    print "SKIPPED\n";
+    print " => DB UPDATE SKIPPED\n";
   }
 }
-$elapsed = $programStart->diff(new DateTime());
-print "\nCompleted! " . $elapsed->format("%i mins %s secs elapsed\n");
+
+print "\nCompleted! " . elapsedTime($programStart);
 
 ?>
