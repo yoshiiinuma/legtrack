@@ -26,7 +26,8 @@ $db->query(LocalMeasure::DROP_MEASURES_TABLE_SQL);
 
 $db->query(LocalMeasure::DROP_SCRAPER_JOBS_TABLE_SQL);
 $db->query(LocalMeasure::DROP_SCRAPER_LOGS_TABLE_SQL);
-$db->query(LocalMeasure::DROP_UPLOADER_JOBS_TABLE_SQL);
+$db->query(LocalMeasure::DROP_UPLOADER_MYSQL_JOBS_TABLE_SQL);
+$db->query(LocalMeasure::DROP_UPLOADER_SQLSVR_JOBS_TABLE_SQL);
 
 $db->close();
 ?>
