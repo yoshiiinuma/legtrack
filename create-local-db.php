@@ -25,4 +25,14 @@ $db->connect();
 $db->query(LocalMeasure::CREATE_MEASURES_TABLE_SQL);
 $db->query(LocalMeasure::CREATE_MEASURES_INDEX_SQL);
 
+$db->query(LocalMeasure::CREATE_SCRAPER_JOBS_TABLE_SQL);
+$db->query(LocalMeasure::CREATE_SCRAPER_JOBS_INDEX_SQL);
+
+$db->query(LocalMeasure::CREATE_SCRAPER_LOGS_TABLE_SQL);
+$db->query(LocalMeasure::CREATE_SCRAPER_LOGS_INDEX_SQL);
+
+$db->query(LocalMeasure::CREATE_UPLOADER_JOBS_TABLE_SQL);
+$db->query(LocalMeasure::CREATE_UPLOADER_JOBS_INDEX_SQL);
+
+$db->close();
 ?>
