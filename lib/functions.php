@@ -1,5 +1,6 @@
 <?php
 namespace legtrack;
+use \DateTime;
 
 function elapsedTime($startTime) {
   $elapsed = $startTime->diff(new DateTime());
