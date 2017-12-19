@@ -94,7 +94,7 @@ HERE;
        :scraperJobId, :measureType, :status, :startedAt, :completedAt, :totalNumber, :updatedNumber)
 HERE;
 
-  //STATUS 1) STARTED 2) FAILED 3) COMPLETED
+  //STATUS 1) STARTED 2) SKIPPED 3) FAILED 4) COMPLETED
   const CREATE_UPLOADER_MYSQL_JOBS_TABLE_SQL = <<<HERE
     CREATE TABLE IF NOT EXISTS uploaderMysqlJobs
     (
@@ -108,7 +108,7 @@ HERE;
     );
 HERE;
 
-  //STATUS 1) STARTED 2) FAILED 3) COMPLETED
+  //STATUS 1) STARTED 2) SKIPPED 3) FAILED 4) COMPLETED
   const CREATE_UPLOADER_SQLSVR_JOBS_TABLE_SQL = <<<HERE
     CREATE TABLE IF NOT EXISTS uploaderSqlsvrJobs
     (
@@ -167,7 +167,7 @@ HERE;
   const SELECT_LATEST_MYSQL_UPLOAD_SQL = <<<HERE
      SELECT scraperJobId, updatedAfter
        FROM uploaderMysqlJobs
-      WHERE status = 3
+      WHERE status = 4
       ORDER BY startedAt DESC
       LIMIT 1
 HERE;
@@ -175,7 +175,7 @@ HERE;
   const SELECT_LATEST_SQLSVR_UPLOAD_SQL = <<<HERE
      SELECT scraperJobId, updatedAfter
        FROM uploaderSqlsvrJobs
-      WHERE status = 3
+      WHERE status = 4
       ORDER BY startedAt DESC
       LIMIT 1
 HERE;
@@ -330,10 +330,10 @@ HERE;
     return NULL;
   }
 
-  public function selectUploaderMysqlJobUpdatedAfter($scraperJobId) {
+  public function selectLatestUploaderMysqlJob() {
     $this->setupStatements();
     if (!$this->selectUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
-    $args = array(':id' => $scraperJobId);
+    $args = array();
     if ($this->exec($this->selectUploaderMysqlJobSql, $args)) {
       return $this->selectUploaderMysqlJobSql->fetchObject();
     }
@@ -372,10 +372,10 @@ HERE;
     return NULL;
   }
 
-  public function selectUploaderSqlsvrJobUpdatedAfter($scraperJobId) {
+  public function selectLatestUploaderSqlsvrJob() {
     $this->setupStatements();
     if (!$this->selectUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
-    $args = array(':id' => $scraperJobId);
+    $args = array();
     if ($this->exec($this->selectUploaderSqlsvrJobSql, $args)) {
       return $this->selectUploaderSqlsvrJobSql->fetchObject();
     }
