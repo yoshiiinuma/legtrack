@@ -45,7 +45,7 @@ HERE;
   const SELECT_SCRAPER_JOB_UPDATED_AFTER_SQL = <<<HERE
      SELECT id, startedAt
        FROM scraperJobs
-      WHERE status = 3
+      WHERE status = 4
         AND id > :id
       ORDER BY startedAt ASC
       LIMIT 1
@@ -104,6 +104,7 @@ HERE;
       updatedAfter int NOT NULL,
       startedAt int NOT NULL,
       completedAt int,
+      totalNumber smallint unsigned NOT NULL,
       updatedNumber smallint unsigned NOT NULL
     );
 HERE;
@@ -118,6 +119,7 @@ HERE;
       updatedAfter int NOT NULL,
       startedAt int NOT NULL,
       completedAt int,
+      totalNumber smallint unsigned NOT NULL,
       updatedNumber smallint unsigned NOT NULL
     );
 HERE;
@@ -136,22 +138,23 @@ HERE;
 
   const INSERT_UPLOADER_MYSQL_JOB_SQL = <<<HERE
      INSERT INTO uploaderMysqlJobs (
-        scraperJobId, status, updatedAfter, startedAt, updatedNumber)
+        scraperJobId, status, updatedAfter, startedAt, totalNumber, updatedNumber)
      VALUES (
-        :scraperJobId, 1, :updatedAfter, :startedAt, 0)
+        :scraperJobId, 1, :updatedAfter, :startedAt, 0, 0)
 HERE;
 
   const INSERT_UPLOADER_SQLSVR_JOB_SQL = <<<HERE
      INSERT INTO uploaderSqlsvrJobs (
-        scraperJobId, status, updatedAfter, startedAt, updatedNumber)
+        scraperJobId, status, updatedAfter, startedAt, totalNumber, updatedNumber)
      VALUES (
-        :scraperJobId, 1, :updatedAfter, :startedAt, 0)
+        :scraperJobId, 1, :updatedAfter, :startedAt, 0, 0)
 HERE;
 
   const UPDATE_UPLOADER_MYSQL_JOB_SQL = <<<HERE
      UPDATE uploaderMysqlJobs
         SET status = :status,
             completedAt = :completedAt,
+            totalNumber = :totalNumber,
             updatedNumber = :updatedNumber
       WHERE id = :id
 HERE;
@@ -160,6 +163,7 @@ HERE;
      UPDATE uploaderSqlsvrJobs
         SET status = :status,
             completedAt = :completedAt,
+            totalNumber = :totalNumber,
             updatedNumber = :updatedNumber
       WHERE id = :id
 HERE;
@@ -275,7 +279,7 @@ HERE;
     if (!$this->selectScraperJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(':id' => $scraperJobId);
     if ($this->exec($this->selectScraperJobSql, $args)) {
-      return $this->selectMeasureSql->fetchObject();
+      return $this->selectScraperJobSql->fetchObject();
     }
     $this->error = $this->selectScraperJobSql->errorInfo();
     return NULL;
@@ -313,13 +317,14 @@ HERE;
     return NULL;
   }
 
-  public function updateUploaderMysqlJob($id, $status, $updatedNumber) {
+  public function updateUploaderMysqlJob($id, $status, $totalNumber, $updatedNumber) {
     $this->setupStatements();
     if (!$this->updateUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':id' => $id,
         ':status' => $status,
         ':completedAt' => (new DateTime())->getTimestamp(),
+        ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
     );
     if ($this->exec($this->updateUploaderMysqlJobSql, $args)) {
@@ -354,13 +359,14 @@ HERE;
     return NULL;
   }
 
-  public function updateUploaderSqlsvrJob($id, $status, $updatedNumber) {
+  public function updateUploaderSqlsvrJob($id, $status, $totalNumber, $updatedNumber) {
     $this->setupStatements();
     if (!$this->updateUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':id' => $id,
         ':status' => $status,
         ':completedAt' => (new DateTime())->getTimestamp(),
+        ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
     );
     if ($this->exec($this->updateUploaderSqlsvrJobSql, $args)) {
