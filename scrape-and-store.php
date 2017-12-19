@@ -1,14 +1,4 @@
 <?php
-namespace legtrack;
-
-use \DateTime;
-
-require_once 'lib/functions.php';
-require_once 'lib/enum.php';
-require_once 'lib/curl.php';
-require_once 'lib/measure_parser.php';
-require_once 'lib/local_measure.php';
-
 /**
  *
  * Require PHP >= 7.0
@@ -41,6 +31,16 @@ require_once 'lib/local_measure.php';
  *
  **/
 
+namespace legtrack;
+
+use \DateTime;
+
+require_once 'lib/functions.php';
+require_once 'lib/enum.php';
+require_once 'lib/curl.php';
+require_once 'lib/measure_parser.php';
+require_once 'lib/local_measure.php';
+
 function usage($argv) {
   echo "Wrong parameters were given:\n\n";
   print_r($argv);
@@ -62,7 +62,6 @@ if ($argc == 4) {
 $env = ($argc > 1) ?  $argv[1] : 'development';
 $year = ($argc > 2) ?  $argv[2] : date('Y');
 
-//$measureTypes = array('hb', 'sb', 'hr', 'sr', 'hcr', 'scr', 'gm');
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
 
@@ -102,10 +101,6 @@ function updateLocalDb($db, $year, $type, $args) {
   $parser = new MeasureParser();
   $parser->start($args->data);
 
-  //$db = new LocalMeasure();
-  //$db->configure($GLOBALS);
-  //$db->connect() || die('Local DB Connection Failed' . PHP_EOL);
-
   $cnt = 0;
 
   $db->beginTransaction();
@@ -113,8 +108,6 @@ function updateLocalDb($db, $year, $type, $args) {
     $cnt++;
     $cur = $parser->getNext();
     $db->upsertMeasureIfOnlyUpdated($year, $type, $cur);
-    //$db->insertMeasure($year, $type, $cur);
-    //$db->updateMeasure($year, $type, $cur);
   }
   $db->commit();
 
@@ -154,7 +147,6 @@ $totalNumber = 0;
 $updatedNumber = 0;
 $updated = FALSE;
 
-//foreach ($measureTypes as $type) {
 foreach ($measureTypes as $type => $val) {
   $startedAt = new DateTime();
 
