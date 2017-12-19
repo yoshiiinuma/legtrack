@@ -243,7 +243,6 @@ HERE;
     $this->setupStatements();
     if (!$this->insertScraperJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
-        //':startedAt' => Date("Y-m-d H:i:s"),
         ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertScraperJobSql, $args)) {
@@ -258,7 +257,6 @@ HERE;
     $args = array(
         ':id' => $id,
         ':status' => $status,
-        //':completedAt' => Date("Y-m-d H:i:s"),
         ':completedAt' => (new DateTime())->getTimestamp(),
         ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
@@ -291,7 +289,6 @@ HERE;
         ':measureType' => $type,
         ':status' => $status,
         ':startedAt' => $startedAt,
-        //':completedAt' => Date("Y-m-d H:i:s"),
         ':completedAt' => (new DateTime())->getTimestamp(),
         ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
@@ -308,7 +305,6 @@ HERE;
     $args = array(
         ':scraperJobId' => $scraperJobId,
         ':updatedAfter' => $updatedAfter,
-        //':startedAt' => Date("Y-m-d H:i:s"),
         ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertUploaderMysqlJobSql, $args)) {
@@ -323,7 +319,6 @@ HERE;
     $args = array(
         ':id' => $id,
         ':status' => $status,
-        //':completedAt' => Date("Y-m-d H:i:s"),
         ':completedAt' => (new DateTime())->getTimestamp(),
         ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
@@ -352,7 +347,6 @@ HERE;
     $args = array(
         ':scraperJobId' => $scraperJobId,
         ':updatedAfter' => $updatedAfter,
-        //':startedAt' => Date("Y-m-d H:i:s"),
         ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertUploaderSqlsvrJobSql, $args)) {
@@ -367,7 +361,6 @@ HERE;
     $args = array(
         ':id' => $id,
         ':status' => $status,
-        //':completedAt' => Date("Y-m-d H:i:s"),
         ':completedAt' => (new DateTime())->getTimestamp(),
         ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,

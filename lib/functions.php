@@ -1,6 +1,11 @@
 <?php
 namespace legtrack;
 
+function elapsedTime($startTime) {
+  $elapsed = $startTime->diff(new DateTime());
+  return $elapsed->format("%i mins %s secs");
+}
+
 function loadConfig($file) {
   if (!file_exists($file)) die("Config Not Found: " . $file . PHP_EOL);
   require_once $file;
