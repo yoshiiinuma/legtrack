@@ -101,7 +101,6 @@ HERE;
       id integer PRIMARY KEY,
       scraperJobId int unsigned NOT NULL,
       status tinyint NOT NULL,
-      updatedAfter int NOT NULL,
       startedAt int NOT NULL,
       completedAt int,
       totalNumber smallint unsigned NOT NULL,
@@ -116,7 +115,6 @@ HERE;
       id integer PRIMARY KEY,
       scraperJobId int unsigned NOT NULL,
       status tinyint NOT NULL,
-      updatedAfter int NOT NULL,
       startedAt int NOT NULL,
       completedAt int,
       totalNumber smallint unsigned NOT NULL,
@@ -138,16 +136,16 @@ HERE;
 
   const INSERT_UPLOADER_MYSQL_JOB_SQL = <<<HERE
      INSERT INTO uploaderMysqlJobs (
-        scraperJobId, status, updatedAfter, startedAt, totalNumber, updatedNumber)
+        scraperJobId, status, startedAt, totalNumber, updatedNumber)
      VALUES (
-        :scraperJobId, 1, :updatedAfter, :startedAt, 0, 0)
+        :scraperJobId, 1, :startedAt, 0, 0)
 HERE;
 
   const INSERT_UPLOADER_SQLSVR_JOB_SQL = <<<HERE
      INSERT INTO uploaderSqlsvrJobs (
-        scraperJobId, status, updatedAfter, startedAt, totalNumber, updatedNumber)
+        scraperJobId, status, startedAt, totalNumber, updatedNumber)
      VALUES (
-        :scraperJobId, 1, :updatedAfter, :startedAt, 0, 0)
+        :scraperJobId, 1, :startedAt, 0, 0)
 HERE;
 
   const UPDATE_UPLOADER_MYSQL_JOB_SQL = <<<HERE
@@ -169,7 +167,7 @@ HERE;
 HERE;
 
   const SELECT_LATEST_MYSQL_UPLOAD_SQL = <<<HERE
-     SELECT scraperJobId, updatedAfter
+     SELECT scraperJobId
        FROM uploaderMysqlJobs
       WHERE status = 4
       ORDER BY startedAt DESC
@@ -177,7 +175,7 @@ HERE;
 HERE;
 
   const SELECT_LATEST_SQLSVR_UPLOAD_SQL = <<<HERE
-     SELECT scraperJobId, updatedAfter
+     SELECT scraperJobId
        FROM uploaderSqlsvrJobs
       WHERE status = 4
       ORDER BY startedAt DESC
@@ -303,12 +301,11 @@ HERE;
     return NULL;
   }
 
-  public function insertUploaderMysqlJob($scraperJobId, $updatedAfter) {
+  public function insertUploaderMysqlJob($scraperJobId) {
     $this->setupStatements();
     if (!$this->insertUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':scraperJobId' => $scraperJobId,
-        ':updatedAfter' => $updatedAfter,
         ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertUploaderMysqlJobSql, $args)) {
@@ -345,12 +342,11 @@ HERE;
     return NULL;
   }
 
-  public function insertUploaderSqlsvrJob($scraperJobId, $updatedAfter) {
+  public function insertUploaderSqlsvrJob($scraperJobId) {
     $this->setupStatements();
     if (!$this->insertUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':scraperJobId' => $scraperJobId,
-        ':updatedAfter' => $updatedAfter,
         ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertUploaderSqlsvrJobSql, $args)) {

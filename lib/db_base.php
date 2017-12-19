@@ -314,10 +314,10 @@ HERE;
     return FALSE;
   }
 
-  public function upsertMeasure($year, $type, $r) {
+  public function upsertMeasure($r) {
     $this->setupStatements();
     if (!$this->upsertMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = $this->createUpsertArgs($year, $type, $r);
+    $args = $this->createUpsertArgs($r->year, $r->type, $r);
     if ($this->exec($this->upsertMeasureSql, $args)) {
       $this->rowAffected += $this->upsertMeasureSql->rowCount();
       return TRUE;
@@ -351,7 +351,9 @@ HERE;
   }
 
   public function getRowAffected() {
-    return $this->rowAffected;
+    $cnt = $this->rowAffected;
+    $this->rowAffected = 0;
+    return $cnt;
   }
 
   public function getLastInsertId() {

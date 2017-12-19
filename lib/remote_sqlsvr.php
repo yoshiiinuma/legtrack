@@ -95,7 +95,6 @@ HERE;
         ':measureType2' => $type,
         ':year2' => $year,
         ':measureNumber2' => $r->measureNumber,
-        //':lastUpdated2' => Date("Y-m-d H:i:s"),
         ':lastUpdated2' => (new DateTime())->getTimestamp(),
         ':code2' => $r->code  ,
         ':measurePdfUrl2' => $r->measurePdfUrl,

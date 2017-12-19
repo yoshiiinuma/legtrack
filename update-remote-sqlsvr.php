@@ -45,7 +45,7 @@ $cnt = 0;
 foreach($updated as $r) {
   print_r($r);
   $cnt++;
-  $sqlsvr->upsertMeasure($r->year, $r->measureType, $r);
+  $sqlsvr->upsertMeasure($r);
 }
 
 print "\n " . $cnt . " rows selected => " . $sqlsvr->getRowAffected() . " rows updated\n";

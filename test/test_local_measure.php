@@ -30,7 +30,9 @@ function insertData($cxt) {
   $parser->start(file_get_contents('./data/measures_before.html'));
   while ($parser->hasNext()) {
     $r = $parser->getNext();
-    if (!$cxt->db->upsertMeasure($cxt->year, $cxt->measureType, $r)) {
+    $r->year = $cxt->year;
+    $r->measureType = $cxt->measureType;
+    if (!$cxt->db->upsertMeasure($r)) {
       print "Insert Failed\n";
       print_r($r);
       print_r($cxt->db->getError());
@@ -46,7 +48,9 @@ function updateData($cxt) {
   $parser->start(file_get_contents('./data/measures_after.html'));
   while ($parser->hasNext()) {
     $r = $parser->getNext();
-    if ($cxt->db->upsertMeasure($cxt->year, $cxt->measureType, $r)) {
+    $r->year = $cxt->year;
+    $r->measureType = $cxt->measureType;
+    if ($cxt->db->upsertMeasure($r)) {
       $cnt++;
     }
   }
