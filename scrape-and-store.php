@@ -120,11 +120,6 @@ function updateLocalDb($db, $year, $type, $args) {
     'updated' => $updated);
 }
 
-function elapsedTime($startTime) {
-  $elapsed = $startTime->diff(new DateTime());
-  return $elapsed->format("%i mins %s secs");
-}
-
 function connectDb() {
   $db = new LocalMeasure();
   $db->configure($GLOBALS);
