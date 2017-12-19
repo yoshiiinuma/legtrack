@@ -317,7 +317,7 @@ HERE;
   public function upsertMeasure($r) {
     $this->setupStatements();
     if (!$this->upsertMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = $this->createUpsertArgs($r->year, $r->type, $r);
+    $args = $this->createUpsertArgs($r->year, $r->measureType, $r);
     if ($this->exec($this->upsertMeasureSql, $args)) {
       $this->rowAffected += $this->upsertMeasureSql->rowCount();
       return TRUE;

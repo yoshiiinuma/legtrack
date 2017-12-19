@@ -24,7 +24,7 @@ HERE;
         year smallint NOT NULL,
         measureType nchar(3) NOT NULL,
         measureNumber smallint NOT NULL,
-        lastUpdated datetime,
+        lastUpdated int,
         code nvarchar(64),
         measurePdfUrl nvarchar(512),
         measureArchiveUrl nvarchar(512),

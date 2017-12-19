@@ -16,7 +16,7 @@ class RemoteMysql extends DbBase {
       year smallint NOT NULL,
       measureType char(3) NOT NULL,
       measureNumber smallint NOT NULL,
-      lastUpdated datetime,
+      lastUpdated int unsigned,
       code varchar(64),
       measurePdfUrl varchar(512),
       measureArchiveUrl varchar(512),
