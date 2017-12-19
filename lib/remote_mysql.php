@@ -1,6 +1,7 @@
 <?php
 namespace legtrack;
 use \PDO;
+use \DateTime;
 
 require_once 'lib/db_base.php';
 
@@ -81,7 +82,8 @@ HERE;
     return array_merge(
       parent::createUpsertArgs($year, $type, $r),
       array(
-        ':lastUpdated2' => Date("Y-m-d H:i:s"),
+        //':lastUpdated2' => Date("Y-m-d H:i:s"),
+        ':lastUpdated2' => (new DateTime())->getTimestamp(),
         ':code2' => $r->code  ,
         ':measurePdfUrl2' => $r->measurePdfUrl,
         ':measureArchiveUrl2' => $r->measureArchiveUrl,

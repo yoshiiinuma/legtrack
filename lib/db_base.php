@@ -1,6 +1,7 @@
 <?php
 namespace legtrack;
 use \PDO;
+use \DateTime;
 
 //FIXME Should extend PDO?
 class DbBase {
@@ -122,7 +123,8 @@ HERE;
         ':measureType' => $type,
         ':year' => $year,
         ':measureNumber' => $r->measureNumber,
-        ':lastUpdated' => Date("Y-m-d H:i:s"),
+        //':lastUpdated' => Date("Y-m-d H:i:s"),
+        ':lastUpdated' => (new DateTime())->getTimestamp(),
         ':code' => $r->code  ,
         ':measurePdfUrl' => $r->measurePdfUrl,
         ':measureArchiveUrl' => $r->measureArchiveUrl,
@@ -189,7 +191,7 @@ HERE;
     return false;
   }
 
-  public function setup_statements() {
+  public function setupStatements() {
     if (!$this->ready) {
       $this->upsertMeasureSql = $this->prepare(static::UPSERT_MEASURE_SQL);
       if (!$this->upsertMeasureSql) { die('UPSERT Measure SQL Preparation Failed' . PHP_EOL); }
@@ -264,7 +266,7 @@ HERE;
   }
 
   public function selectMeasures($year, $type) {
-    $this->setup_statements();
+    $this->setupStatements();
     if ($this->query('SELECT * FROM measures;')) {
       return $this->sql->fetchAll(PDO::FETCH_OBJ);
     }
@@ -272,7 +274,7 @@ HERE;
   }
 
   public function selectUpdated($time) {
-    $this->setup_statements();
+    $this->setupStatements();
     if (!$this->selectUpdatedSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':lastUpdated' => $time,
@@ -285,7 +287,7 @@ HERE;
   }
 
   public function selectMeasure($year, $type, $r) {
-    $this->setup_statements();
+    $this->setupStatements();
     if (!$this->selectMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':measureType' => $type,
@@ -299,27 +301,8 @@ HERE;
     return NULL;
   }
 
-  public function insertOrIgnoreAndUpdateMeasure($year, $type, $r) {
-    $this->setup_statements();
-    if (!$this->insertMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    if (!$this->updateMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = $this->createInsertArgs($year, $type, $r);
-    if ($this->exec($this->insertMeasureSql, $args)) {
-      $this->rowAffected += $this->insertMeasureSql->rowCount();
-      if ($this->exec($this->updateMeasureSql, $args)) {
-        $this->rowAffected += $this->updateMeasureSql->rowCount();
-        return TRUE;
-      } else {
-        $this->error = $this->updateMeasureSql->errorInfo();
-      }
-    } else {
-      $this->error = $this->insertMeasureSql->errorInfo();
-    }
-    return NULL;
-  }
-
   public function upsertMeasureIfOnlyUpdated($year, $type, $r) {
-    $this->setup_statements();
+    $this->setupStatements();
     $cur = $this->selectMeasure($year, $type, $r);
     if ($cur) {
       if (!$this->compare($cur, $r)) {
@@ -332,7 +315,7 @@ HERE;
   }
 
   public function upsertMeasure($year, $type, $r) {
-    $this->setup_statements();
+    $this->setupStatements();
     if (!$this->upsertMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createUpsertArgs($year, $type, $r);
     if ($this->exec($this->upsertMeasureSql, $args)) {
@@ -344,7 +327,7 @@ HERE;
   }
 
   public function updateMeasure($year, $type, $r) {
-    $this->setup_statements();
+    $this->setupStatements();
     if (!$this->updateMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createUpdateArgs($year, $type, $r);
     if ($this->exec($this->updateMeasureSql, $args)) {
@@ -356,7 +339,7 @@ HERE;
   }
 
   public function insertMeasure($year, $type, $r) {
-    $this->setup_statements();
+    $this->setupStatements();
     if (!$this->insertMeasureSql) die('No SQL Prepared' . PHP_EOL);
     $args = $this->createInsertArgs($year, $type, $r);
     if ($this->exec($this->insertMeasureSql, $args)) {
@@ -369,6 +352,11 @@ HERE;
 
   public function getRowAffected() {
     return $this->rowAffected;
+  }
+
+  public function getLastInsertId() {
+    if (!$this->conn) die('No Connection Established' . PHP_EOL);
+    return $this->conn->lastInsertId();
   }
 
   public function getMeasureCount() {

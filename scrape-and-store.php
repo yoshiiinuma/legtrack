@@ -4,13 +4,14 @@ namespace legtrack;
 use \DateTime;
 
 require_once 'lib/functions.php';
+require_once 'lib/enum.php';
 require_once 'lib/curl.php';
 require_once 'lib/measure_parser.php';
 require_once 'lib/local_measure.php';
 
 /**
  *
- * Require PHP >= 5.6
+ * Require PHP >= 7.0
  *
  * Capitol Deadline Tracking Page < Reports and Lists Page
  *
@@ -61,7 +62,9 @@ if ($argc == 4) {
 $env = ($argc > 1) ?  $argv[1] : 'development';
 $year = ($argc > 2) ?  $argv[2] : date('Y');
 
-$measureTypes = array('hb', 'sb', 'hr', 'sr', 'hcr', 'scr', 'gm');
+//$measureTypes = array('hb', 'sb', 'hr', 'sr', 'hcr', 'scr', 'gm');
+$measureTypes = Enum::getMeasureTypes();
+$jobStatus = Enum::getJobStatus();
 
 loadEnv($env);
 
@@ -89,18 +92,19 @@ function checkCapitolSiteUpdate($year, $type, $dbg) {
   } 
 
   print $title . " : " . $status . " => " . $dst . ' ' . elapsedTime($start);
-  return $data;
+  return (object)array('status' => $status, 'data' => $data,
+    'oldMd5' => $curMd5, 'newMd5' => $newMd5);
 }
 
-function updateLocalDb($year, $type, $data) {
+function updateLocalDb($db, $year, $type, $args) {
   $start = new DateTime();
 
   $parser = new MeasureParser();
-  $parser->start($data);
+  $parser->start($args->data);
 
-  $db = new LocalMeasure();
-  $db->configure($GLOBALS);
-  $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
+  //$db = new LocalMeasure();
+  //$db->configure($GLOBALS);
+  //$db->connect() || die('Local DB Connection Failed' . PHP_EOL);
 
   $cnt = 0;
 
@@ -109,14 +113,18 @@ function updateLocalDb($year, $type, $data) {
     $cnt++;
     $cur = $parser->getNext();
     $db->upsertMeasureIfOnlyUpdated($year, $type, $cur);
-    //$db->insertOrIgnoreAndUpdateMeasure($year, $type, $cur);
     //$db->insertMeasure($year, $type, $cur);
     //$db->updateMeasure($year, $type, $cur);
   }
   $db->commit();
-  $db->close();
 
-  print $db->getRowAffected() . '/' . $cnt . " Rows " . elapsedTime($start);
+  $updatedNumber = $db->getRowAffected();
+  $updated = ($updatedNumber > 0) ? TRUE : FALSE; 
+  print $updatedNumber . '/' . $cnt . " Rows " . elapsedTime($start);
+  return (object)array(
+    'totalNumber' => $cnt,
+    'updatedNumber' => $updatedNumber,
+    'updated' => $updated);
 }
 
 function elapsedTime($startTime) {
@@ -124,21 +132,52 @@ function elapsedTime($startTime) {
   return $elapsed->format("%i mins %s secs");
 }
 
+function connectDb() {
+  $db = new LocalMeasure();
+  $db->configure($GLOBALS);
+  $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
+  return $db;
+}
+
+function closeDb($db) {
+  $db->close();
+}
+
 $programStart = new DateTime();
 
-foreach ($measureTypes as $type) {
-  $data = checkCapitolSiteUpdate($year, $type, $dbg);
+$db = connectDb();
 
+$db->insertScraperJob();
+$jobId = $db->getLastInsertId();
 
-  if ($data) {
+$totalNumber = 0;
+$updatedNumber = 0;
+$updated = FALSE;
+
+//foreach ($measureTypes as $type) {
+foreach ($measureTypes as $type => $val) {
+  $startedAt = new DateTime();
+
+  $scrapeRslt = checkCapitolSiteUpdate($year, $type, $dbg);
+
+  if ($scrapeRslt->status == 'UPDATED') {
     print " => DB UPDATE ";
-    updateLocalDb($year, $type, $data);
+    $dbRslt = updateLocalDb($db, $year, $type, $scrapeRslt);
     print "\n";
+    $totalNumber += $dbRslt->totalNumber;
+    $updatedNumber += $dbRslt->updatedNumber;
+    if ($dbRslt->updated) $updated = TRUE;
+    $db->insertScraperLog($jobId, $type, $jobStatus->completed, $startedAt->getTimestamp(),
+      $dbRslt->totalNumber, $dbRslt->updatedNumber);
   } else {
+    $db->insertScraperLog($jobId, $type, $jobStatus->skipped, $startedAt->getTimestamp(), 0, 0);
     print " => DB UPDATE SKIPPED\n";
   }
 }
 
-print "\nCompleted! " . elapsedTime($programStart);
+$db->updateScraperJob($jobId, $jobStatus->completed, $totalNumber, $updatedNumber, $updated);
+closeDb($db);
+
+print "\nCompleted! " . elapsedTime($programStart) . PHP_EOL;
 
 ?>

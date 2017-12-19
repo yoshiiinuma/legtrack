@@ -1,21 +1,35 @@
 <?php
 namespace legtrack;
 use \PDO;
+use \DateTime;
 
 require_once 'lib/db_base.php';
 
 class LocalMeasure extends DbBase {
   private $path;
 
+  protected $insertScraperJobSql;
+  protected $updateScraperJobSql;
+  protected $selectScraperJobSql;
+
+  protected $insertScraperLogSql;
+
+  protected $insertUploaderMysqlJobSql;
+  protected $updateUploaderMysqlJobSql;
+  protected $selectUploaderMysqlJobSql;
+
+  protected $insertUploaderSqlsvrJobSql;
+  protected $updateUploaderSqlsvrJobSql;
+  protected $selectUploaderSqlsvrJobSql;
+
   //STATUS 1) STARTED 2) FAILED 3) COMPLETED
   const CREATE_SCRAPER_JOBS_TABLE_SQL = <<<HERE
     CREATE TABLE IF NOT EXISTS scraperJobs
     (
       id integer PRIMARY KEY AUTOINCREMENT,
-      year smallint NOT NULL,
       status tinyint NOT NULL,
-      startedAt datetime NOT NULL,
-      completedAt datetime,
+      startedAt int NOT NULL,
+      completedAt int,
       totalNumber smallint unsigned NOT NULL,
       updatedNumber smallint unsigned NOT NULL,
       updateNeeded tinyint(1) NOT NULL
@@ -28,29 +42,30 @@ HERE;
     CREATE INDEX scraperJobsIdx ON scraperJobs(status, startedAt);
 HERE;
 
-  const SELECT_UPDATED_AFTER_SQL = <<<HERE
+  const SELECT_SCRAPER_JOB_UPDATED_AFTER_SQL = <<<HERE
      SELECT id, startedAt
+       FROM scraperJobs
       WHERE status = 3
         AND id > :id
-       ORDER BY ASC startedAt
-       LIMIT 1
+      ORDER BY startedAt ASC
+      LIMIT 1
 HERE;
 
   const INSERT_SCRAPER_JOB_SQL = <<<HERE
      INSERT INTO scraperJobs (
-        year, status, startedAt, totalNumber, updatedNumber, updateNeeded)
+        status, startedAt, totalNumber, updatedNumber, updateNeeded)
      VALUES (
-        :year, 1, :startedAt, 0, 0, 0)
+        1, :startedAt, 0, 0, 0)
 HERE;
 
   const UPDATE_SCRAPER_JOB_SQL = <<<HERE
      UPDATE scraperJobs
-       SET status = :status,
-           completededAt = :completededAt,
-           totalNumber = :totalNumber,
-           updatedNumber = :updatedNumber,
-           updateNeeded = :updateNeeded
-       WHERE id = :id
+        SET status = :status,
+            completedAt = :completedAt,
+            totalNumber = :totalNumber,
+            updatedNumber = :updatedNumber,
+            updateNeeded = :updateNeeded
+      WHERE id = :id
 HERE;
 
   const CREATE_SCRAPER_LOGS_TABLE_SQL = <<<HERE
@@ -59,8 +74,8 @@ HERE;
       scraperJobId int unsigned,
       measureType tinyint NOT NULL,
       status tinyint NOT NULL,
-      startedAt datetime NOT NULL,
-      completedAt datetime,
+      startedAt int NOT NULL,
+      completedAt int,
       totalNumber smallint unsigned NOT NULL,
       updatedNumber smallint unsigned NOT NULL
     );
@@ -74,9 +89,9 @@ HERE;
 
   const INSERT_SCRAPER_LOG_SQL = <<<HERE
      INSERT INTO scraperLogs (
-       scrperJobId, measureType, status, startedAt, totalNumber, updatedNumber)
+       scraperJobId, measureType, status, startedAt, completedAt, totalNumber, updatedNumber)
      VALUES (
-       :scrperJobId, :measureType, :status, :startedAt, totalNumber, :updatedNumber)
+       :scraperJobId, :measureType, :status, :startedAt, :completedAt, :totalNumber, :updatedNumber)
 HERE;
 
   //STATUS 1) STARTED 2) FAILED 3) COMPLETED
@@ -86,9 +101,9 @@ HERE;
       id integer PRIMARY KEY,
       scraperJobId int unsigned NOT NULL,
       status tinyint NOT NULL,
-      updatedAfter datetime NOT NULL,
-      startedAt datetime NOT NULL,
-      completedAt datetime,
+      updatedAfter int NOT NULL,
+      startedAt int NOT NULL,
+      completedAt int,
       updatedNumber smallint unsigned NOT NULL
     );
 HERE;
@@ -100,9 +115,9 @@ HERE;
       id integer PRIMARY KEY,
       scraperJobId int unsigned NOT NULL,
       status tinyint NOT NULL,
-      updatedAfter datetime NOT NULL,
-      startedAt datetime NOT NULL,
-      completedAt datetime,
+      updatedAfter int NOT NULL,
+      startedAt int NOT NULL,
+      completedAt int,
       updatedNumber smallint unsigned NOT NULL
     );
 HERE;
@@ -135,34 +150,34 @@ HERE;
 
   const UPDATE_UPLOADER_MYSQL_JOB_SQL = <<<HERE
      UPDATE uploaderMysqlJobs
-       SET status = :status,
-           completededAt = :completededAt,
-           updatedNumber = :updatedNumber
-       WHERE id = :id
+        SET status = :status,
+            completedAt = :completedAt,
+            updatedNumber = :updatedNumber
+      WHERE id = :id
 HERE;
 
   const UPDATE_UPLOADER_SQLSVR_JOB_SQL = <<<HERE
      UPDATE uploaderSqlsvrJobs
-       SET status = :status,
-           completededAt = :completededAt,
-           updatedNumber = :updatedNumber
-       WHERE id = :id
+        SET status = :status,
+            completedAt = :completedAt,
+            updatedNumber = :updatedNumber
+      WHERE id = :id
 HERE;
 
   const SELECT_LATEST_MYSQL_UPLOAD_SQL = <<<HERE
      SELECT scraperJobId, updatedAfter
        FROM uploaderMysqlJobs
-       WHERE status = 3
-       ORDER BY DESC startedAt
-       LIMIT 1
+      WHERE status = 3
+      ORDER BY startedAt DESC
+      LIMIT 1
 HERE;
 
   const SELECT_LATEST_SQLSVR_UPLOAD_SQL = <<<HERE
      SELECT scraperJobId, updatedAfter
        FROM uploaderSqlsvrJobs
-       WHERE status = 3
-       ORDER BY DESC startedAt
-       LIMIT 1
+      WHERE status = 3
+      ORDER BY startedAt DESC
+      LIMIT 1
 HERE;
 
   const INSERT_MEASURE_SQL = <<<HERE
@@ -193,6 +208,186 @@ HERE;
 
   public function getDns() {
     return "sqlite:".$this->path;
+  }
+
+  public function setupStatements() {
+    if (!$this->ready) {
+      $this->insertScraperJobSql = $this->prepare(static::INSERT_SCRAPER_JOB_SQL);
+      if (!$this->insertScraperJobSql) { die('INSERT ScraperJob SQL Preparation Failed' . PHP_EOL); }
+      $this->updateScraperJobSql = $this->prepare(static::UPDATE_SCRAPER_JOB_SQL);
+      if (!$this->updateScraperJobSql) { die('UPDATE ScraperJob SQL Preparation Failed' . PHP_EOL); }
+      $this->selectScraperJobSql = $this->prepare(static::SELECT_SCRAPER_JOB_UPDATED_AFTER_SQL);
+      if (!$this->selectScraperJobSql) { die('SELECT ScraperJob SQL Preparation Failed' . PHP_EOL); }
+
+      $this->insertScraperLogSql = $this->prepare(static::INSERT_SCRAPER_LOG_SQL);
+      if (!$this->insertScraperLogSql) { die('INSERT ScraperLog SQL Preparation Failed' . PHP_EOL); }
+
+      $this->insertUploaderMysqlJobSql = $this->prepare(static::INSERT_UPLOADER_MYSQL_JOB_SQL);
+      if (!$this->insertUploaderMysqlJobSql) { die('INSERT UploaderMysqlJob SQL Preparation Failed' . PHP_EOL); }
+      $this->updateUploaderMysqlJobSql = $this->prepare(static::UPDATE_UPLOADER_MYSQL_JOB_SQL);
+      if (!$this->updateUploaderMysqlJobSql) { die('UPDATE UploaderMysqlJob SQL Preparation Failed' . PHP_EOL); }
+      $this->selectUploaderMysqlJobSql = $this->prepare(static::SELECT_LATEST_MYSQL_UPLOAD_SQL);
+      if (!$this->selectUploaderMysqlJobSql) { die('SELECT UploaderMysqlJob SQL Preparation Failed' . PHP_EOL); }
+
+      $this->insertUploaderSqlsvrJobSql = $this->prepare(static::INSERT_UPLOADER_SQLSVR_JOB_SQL);
+      if (!$this->insertUploaderSqlsvrJobSql) { die('INSERT UploaderSqlsvrJob SQL Preparation Failed' . PHP_EOL); }
+      $this->updateUploaderSqlsvrJobSql = $this->prepare(static::UPDATE_UPLOADER_SQLSVR_JOB_SQL);
+      if (!$this->updateUploaderSqlsvrJobSql) { die('UPDATE UploaderSqlsvrJob SQL Preparation Failed' . PHP_EOL); }
+      $this->selectUploaderSqlsvrJobSql = $this->prepare(static::SELECT_LATEST_SQLSVR_UPLOAD_SQL);
+      if (!$this->selectUploaderSqlsvrJobSql) { die('SELECT UploaderSqlsvrJob SQL Preparation Failed' . PHP_EOL); }
+    }
+    parent::setupStatements();
+  }
+
+  public function insertScraperJob() {
+    $this->setupStatements();
+    if (!$this->insertScraperJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        //':startedAt' => Date("Y-m-d H:i:s"),
+        ':startedAt' => (new DateTime())->getTimestamp(),
+    );
+    if ($this->exec($this->insertScraperJobSql, $args)) {
+      return TRUE;
+    }
+    return NULL;
+  }
+
+  public function updateScraperJob($id, $status, $totalNumber, $updatedNumber, $updateNeeded) {
+    $this->setupStatements();
+    if (!$this->updateScraperJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':id' => $id,
+        ':status' => $status,
+        //':completedAt' => Date("Y-m-d H:i:s"),
+        ':completedAt' => (new DateTime())->getTimestamp(),
+        ':totalNumber' => $totalNumber,
+        ':updatedNumber' => $updatedNumber,
+        ':updateNeeded' => $updateNeeded,
+    );
+
+    if ($this->exec($this->updateScraperJobSql, $args)) {
+      return TRUE;
+    }
+    $this->error = $this->updateScraperJobSql->errorInfo();
+    return NULL;
+  }
+
+  public function selectScraperJobUpdatedAfter($scraperJobId) {
+    $this->setupStatements();
+    if (!$this->selectScraperJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(':id' => $scraperJobId);
+    if ($this->exec($this->selectScraperJobSql, $args)) {
+      return $this->selectMeasureSql->fetchObject();
+    }
+    $this->error = $this->selectScraperJobSql->errorInfo();
+    return NULL;
+  }
+
+  public function insertScraperLog($scraperJobId, $type, $status, $startedAt, $totalNumber, $updatedNumber) {
+    $this->setupStatements();
+    if (!$this->insertScraperLogSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':scraperJobId' => $scraperJobId,
+        ':measureType' => $type,
+        ':status' => $status,
+        ':startedAt' => $startedAt,
+        //':completedAt' => Date("Y-m-d H:i:s"),
+        ':completedAt' => (new DateTime())->getTimestamp(),
+        ':totalNumber' => $totalNumber,
+        ':updatedNumber' => $updatedNumber,
+    );
+    if ($this->exec($this->insertScraperLogSql, $args)) {
+      return TRUE;
+    }
+    return NULL;
+  }
+
+  public function insertUploaderMysqlJob($year, $type, $r) {
+    $this->setupStatements();
+    if (!$this->insertUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':scraperJobId' => $scraperJobId,
+        ':updatedAfter' => $updatedAfter,
+        //':startedAt' => Date("Y-m-d H:i:s"),
+        ':startedAt' => (new DateTime())->getTimestamp(),
+    );
+    if ($this->exec($this->insertUploaderMysqlJobSql, $args)) {
+      return TRUE;
+    }
+    return NULL;
+  }
+
+  public function updateUploaderMysqlJob($year, $type, $r) {
+    $this->setupStatements();
+    if (!$this->updateUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':id' => $id,
+        ':status' => $status,
+        //':completedAt' => Date("Y-m-d H:i:s"),
+        ':completedAt' => (new DateTime())->getTimestamp(),
+        ':totalNumber' => $totalNumber,
+        ':updatedNumber' => $updatedNumber,
+    );
+    if ($this->exec($this->updateUploaderMysqlJobSql, $args)) {
+      return TRUE;
+    }
+    $this->error = $this->updateUploaderMysqlJobSql->errorInfo();
+    return NULL;
+  }
+
+  public function selectUploaderMysqlJobUpdatedAfter($scraperJobId) {
+    $this->setupStatements();
+    if (!$this->selectUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(':id' => $scraperJobId);
+    if ($this->exec($this->selectUploaderMysqlJobSql, $args)) {
+      return $this->selectUploaderMysqlJobSql->fetchObject();
+    }
+    $this->error = $this->selectUploaderMysqlJobSql->errorInfo();
+    return NULL;
+  }
+
+  public function insertUploaderSqlsvrJob($year, $type, $r) {
+    $this->setupStatements();
+    if (!$this->insertUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':scraperJobId' => $scraperJobId,
+        ':updatedAfter' => $updatedAfter,
+        //':startedAt' => Date("Y-m-d H:i:s"),
+        ':startedAt' => (new DateTime())->getTimestamp(),
+    );
+    if ($this->exec($this->insertUploaderSqlsvrJobSql, $args)) {
+      return TRUE;
+    }
+    return NULL;
+  }
+
+  public function updateUploaderSqlsvrJob($year, $type, $r) {
+    $this->setupStatements();
+    if (!$this->updateUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':id' => $id,
+        ':status' => $status,
+        //':completedAt' => Date("Y-m-d H:i:s"),
+        ':completedAt' => (new DateTime())->getTimestamp(),
+        ':totalNumber' => $totalNumber,
+        ':updatedNumber' => $updatedNumber,
+    );
+    if ($this->exec($this->updateUploaderSqlsvrJobSql, $args)) {
+      return TRUE;
+    }
+    $this->error = $this->updateUploaderSqlsvrJobSql->errorInfo();
+    return NULL;
+  }
+
+  public function selectUploaderSqlsvrJobUpdatedAfter($scraperJobId) {
+    $this->setupStatements();
+    if (!$this->selectUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(':id' => $scraperJobId);
+    if ($this->exec($this->selectUploaderSqlsvrJobSql, $args)) {
+      return $this->selectUploaderSqlsvrJobSql->fetchObject();
+    }
+    $this->error = $this->selectUploaderSqlsvrJobSql->errorInfo();
+    return NULL;
   }
 
 }
