@@ -299,7 +299,7 @@ HERE;
     return NULL;
   }
 
-  public function insertUploaderMysqlJob($year, $type, $r) {
+  public function insertUploaderMysqlJob($scraperJobId, $updatedAfter) {
     $this->setupStatements();
     if (!$this->insertUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
@@ -313,14 +313,13 @@ HERE;
     return NULL;
   }
 
-  public function updateUploaderMysqlJob($year, $type, $r) {
+  public function updateUploaderMysqlJob($id, $status, $updatedNumber) {
     $this->setupStatements();
     if (!$this->updateUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':id' => $id,
         ':status' => $status,
         ':completedAt' => (new DateTime())->getTimestamp(),
-        ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
     );
     if ($this->exec($this->updateUploaderMysqlJobSql, $args)) {
@@ -341,7 +340,7 @@ HERE;
     return NULL;
   }
 
-  public function insertUploaderSqlsvrJob($year, $type, $r) {
+  public function insertUploaderSqlsvrJob($scraperJobId, $updatedAfter) {
     $this->setupStatements();
     if (!$this->insertUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
@@ -355,14 +354,13 @@ HERE;
     return NULL;
   }
 
-  public function updateUploaderSqlsvrJob($year, $type, $r) {
+  public function updateUploaderSqlsvrJob($id, $status, $updatedNumber) {
     $this->setupStatements();
     if (!$this->updateUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':id' => $id,
         ':status' => $status,
         ':completedAt' => (new DateTime())->getTimestamp(),
-        ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
     );
     if ($this->exec($this->updateUploaderSqlsvrJobSql, $args)) {
