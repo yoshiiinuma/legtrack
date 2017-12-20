@@ -283,6 +283,7 @@ HERE;
       return $this->selectUpdatedSql->fetchAll(PDO::FETCH_OBJ);
     }
     $this->error = $this->selectUpdatedSql->errorInfo();
+    Logger::logger()->error('SELECT UPDATED: ', $this->error);
     return NULL;
   }
 
@@ -298,6 +299,7 @@ HERE;
       return $this->selectMeasureSql->fetchObject();
     }
     $this->error = $this->selectMeasureSql->errorInfo();
+    Logger::logger()->error('SELECT MEASURE: ', $this->error);
     return NULL;
   }
 
@@ -323,6 +325,7 @@ HERE;
       return TRUE;
     }
     $this->error = $this->upsertMeasureSql->errorInfo();
+    Logger::logger()->error('UPSERT MEASURE: ', $this->error);
     return NULL;
   }
 
@@ -335,6 +338,7 @@ HERE;
       return TRUE;
     }
     $this->error = $this->updateMeasureSql->errorInfo();
+    Logger::logger()->error('UPDATE MEASURE: ', $this->error);
     return NULL;
   }
 
@@ -347,6 +351,7 @@ HERE;
       return TRUE;
     }
     $this->error = $this->insertMeasureSql->errorInfo();
+    Logger::logger()->error('INSERT MEASURE: ', $this->error);
     return NULL;
   }
 
@@ -380,6 +385,7 @@ HERE;
       $sql = $this->conn->prepare($stmt);
       return $sql; 
     } catch (PDOException $e) {
+      Logger::logger()->error('PREPARE STATEMENT: '. $e->getMessage, $e);
       print($e->getMessage() . PHP_EOL);
       print_r($e);
       $this->error = $e;
@@ -396,6 +402,7 @@ HERE;
       $sql->execute($args);
       return true;
     } catch (PDOException $e) {
+      Logger::logger()->error('EXEC STATEMENT: '. $e->getMessage, $e);
       print($e->getMessage() . PHP_EOL);
       print_r($e);
       $this->error = $e;
@@ -412,6 +419,7 @@ HERE;
       $sql->execute();
       return true;
     } catch (PDOException $e) {
+      Logger::logger()->error('QUERY: '. $e->getMessage, $e);
       print($e->getMessage() . PHP_EOL);
       print_r($e);
       $this->error = $e;
