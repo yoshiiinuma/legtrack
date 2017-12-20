@@ -65,20 +65,21 @@ $year = ($argc > 2) ?  $argv[2] : date('Y');
 
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
+$pg = 'SCRAPE-AND-STORE ';
 
 loadEnv($env);
 
 Logger::open($GLOBALS);
 Logger::logger()->setLogLevel(Logger::INFO);
-Logger::logger()->info('SCRAPE-AND-STORE STARTED ENV: ' . $env . ', YEAR: ' . $year);
+Logger::logger()->info($pg . 'STARTED ENV: ' . $env . ', YEAR: ' . $year);
 
 function checkCapitolSiteUpdate($year, $type, $dbg) {
   $start = new DateTime();
 
   $data = NULL;
   $status = 'MATCHED';
-  $title = $year . ' ' . $type;
-  if (strlen($title) == 7) $title .= ' ';
+  $target = $year . ' ' . $type;
+  if (strlen($target) == 7) $target .= ' ';
 
   $curl = new Curl();
   $curl->debug = $dbg;
@@ -95,7 +96,7 @@ function checkCapitolSiteUpdate($year, $type, $dbg) {
     $data = $curl->getResult();
   } 
 
-  Logger::logger()->info($title . " : " . $status . " => " . $dst . ' ' . elapsedTime($start));
+  Logger::logger()->info($pg . $target . " : " . $status . " => " . $dst . ' ' . elapsedTime($start));
 
   return (object)array('status' => $status, 'data' => $data,
     'oldMd5' => $curMd5, 'newMd5' => $newMd5);
@@ -119,7 +120,7 @@ function updateLocalDb($db, $year, $type, $args) {
 
   $updatedNumber = $db->getRowAffected();
   $updated = ($updatedNumber > 0) ? TRUE : FALSE; 
-  Logger::logger()->info($year . ' ' . $type . ' UPDATED ' . $updatedNumber . '/' . $cnt . " Rows " . elapsedTime($start));
+  Logger::logger()->info($pg . $year . ' ' . $type . ' UPDATED ' . $updatedNumber . '/' . $cnt . " Rows " . elapsedTime($start));
 
   return (object)array(
     'totalNumber' => $cnt,
@@ -163,14 +164,15 @@ foreach ($measureTypes as $type => $val) {
       $dbRslt->totalNumber, $dbRslt->updatedNumber);
   } else {
     $db->insertScraperLog($jobId, $type, $jobStatus->skipped, $startedAt->getTimestamp(), 0, 0);
-    Logger::logger()->info($year . ' ' . $type . ' SKIPPED');
+    Logger::logger()->info($pg . $year . ' ' . $type . ' SKIPPED');
   }
 }
 
 $db->updateScraperJob($jobId, $jobStatus->completed, $totalNumber, $updatedNumber, $updated);
 closeDb($db);
 
-Logger::logger()->info('SCRAPE-AND-STORE COMPLETED! '. elapsedTime($programStart));
+Logger::logger()->info($pg . $updated . '/' . $total . ' Rows Updated');
+Logger::logger()->info($pg . 'COMPLETED! '. elapsedTime($programStart));
 Logger::close();
 
 ?>

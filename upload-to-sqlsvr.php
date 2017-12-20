@@ -41,6 +41,7 @@ $env = ($argc == 2) ? $argv[1]: 'development';
 
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
+$pg = 'UPLOAD-TO-SQLSVR ';
 
 loadEnv($env);
 
@@ -48,7 +49,7 @@ $programStart = new DateTime();
 
 Logger::open($GLOBALS);
 Logger::logger()->setLogLevel(Logger::INFO);
-Logger::logger()->info('UPLOAD-TO-SQLSVR STARTED ENV: ' . $env);
+Logger::logger()->info($pg . 'STARTED ENV: ' . $env);
 
 $local = connectLocalDb();
 
@@ -66,9 +67,9 @@ $scraperStartedAt = 0;
 if ($unprocessedScraperJob) {
   $scraperJobId = $unprocessedScraperJob->id;
   $scraperStartedAt = $unprocessedScraperJob->startedAt;
-  Logger::logger()->info('Found Unprocessed Scraper Job: ' . $scraperJobId);
+  Logger::logger()->info($pg . 'Found Unprocessed Scraper Job: ' . $scraperJobId);
 } else {
-  Logger::logger()->info('No Unprocessed Scraper Job');
+  Logger::logger()->info($pg . 'No Unprocessed Scraper Job');
 }
 
 $status = $jobStatus->skipped;
@@ -91,15 +92,15 @@ if ($scraperStartedAt > 0) {
     $remote->close();
     $status = $jobStatus->completed;
   } else {
-    Logger::logger()->info('No Unprocessed Data');
+    Logger::logger()->info($pg . 'No Unprocessed Data');
   }
 }
 
 $local->updateUploaderSqlSvrJob($jobId, $status, $total, $updated);
 closeLocalDb($local);
 
-Logger::logger()->info($updated . '/' . $total . ' Rows Updated');
-Logger::logger()->info('UPLOAD-TO-SQLSVR COMPLETED! ' . elapsedTime($programStart));
+Logger::logger()->info($pg . $updated . '/' . $total . ' Rows Updated');
+Logger::logger()->info($pg . 'COMPLETED! ' . elapsedTime($programStart));
 Logger::close();
 
 ?>
