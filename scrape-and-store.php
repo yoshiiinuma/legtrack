@@ -75,6 +75,7 @@ Logger::logger()->info($pg . 'STARTED ENV: ' . $env . ', YEAR: ' . $year);
 
 function checkCapitolSiteUpdate($year, $type, $dbg) {
   $start = new DateTime();
+  global $pg;
 
   $data = NULL;
   $status = 'MATCHED';
@@ -104,6 +105,7 @@ function checkCapitolSiteUpdate($year, $type, $dbg) {
 
 function updateLocalDb($db, $year, $type, $args) {
   $start = new DateTime();
+  global $pg;
 
   $parser = new MeasureParser();
   $parser->start($args->data);
@@ -171,7 +173,7 @@ foreach ($measureTypes as $type => $val) {
 $db->updateScraperJob($jobId, $jobStatus->completed, $totalNumber, $updatedNumber, $updated);
 closeDb($db);
 
-Logger::logger()->info($pg . $updated . '/' . $total . ' Rows Updated');
+Logger::logger()->info($pg . $updatedNumber . '/' . $totalNumber . ' Rows Updated');
 Logger::logger()->info($pg . 'COMPLETED! '. elapsedTime($programStart));
 Logger::close();
 
