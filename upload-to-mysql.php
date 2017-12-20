@@ -7,6 +7,7 @@ require_once 'lib/functions.php';
 require_once 'lib/enum.php';
 require_once 'lib/local_measure.php';
 require_once 'lib/remote_mysql.php';
+require_once 'lib/logger.php';
 
 function usage($argv) {
   echo "\nUASGE: php create-remote-mysql.php <env>\n\n";
@@ -40,10 +41,15 @@ $env = ($argc == 2) ? $argv[1]: 'development';
 
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
+$pg = 'UPLOAD-TO-MYSQL ';
 
 loadEnv($env);
 
 $programStart = new DateTime();
+
+Logger::open($GLOBALS);
+Logger::logger()->setLogLevel(Logger::INFO);
+Logger::logger()->info($pg . 'STARTED ENV: ' . $env);
 
 $local = connectLocalDb();
 
@@ -61,8 +67,9 @@ $scraperStartedAt = 0;
 if ($unprocessedScraperJob) {
   $scraperJobId = $unprocessedScraperJob->id;
   $scraperStartedAt = $unprocessedScraperJob->startedAt;
+  Logger::logger()->info($pg . 'Found Unprocessed Scraper Job: ' . $scraperJobId);
 } else {
-  print "No Unprocessed Job\n";
+  Logger::logger()->info($pg . 'No Unprocessed Scraper Job');
 }
 
 $status = $jobStatus->skipped;
@@ -85,14 +92,15 @@ if ($scraperStartedAt > 0) {
     $remote->close();
     $status = $jobStatus->completed;
   } else {
-    print "No Unprocessed Data\n";
+    Logger::logger()->info($pg . 'No Unprocessed Data');
   }
 }
 
 $local->updateUploaderSqlSvrJob($jobId, $status, $total, $updated);
 closeLocalDb($local);
 
-print $updated . '/' . $total . " Rows Updated\n";
-print "Completed! " . elapsedTime($programStart) . PHP_EOL;
+Logger::logger()->info($pg . $updated . '/' . $total . ' Rows Updated');
+Logger::logger()->info($pg . 'COMPLETED! ' . elapsedTime($programStart));
+Logger::close();
 
 ?>
