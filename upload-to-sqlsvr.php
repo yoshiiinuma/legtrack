@@ -7,6 +7,7 @@ require_once 'lib/functions.php';
 require_once 'lib/enum.php';
 require_once 'lib/local_measure.php';
 require_once 'lib/remote_sqlsvr.php';
+require_once 'lib/logger.php';
 
 function usage($argv) {
   echo "\nUASGE: php create-remote-sqlsvr.php <env>\n\n";
@@ -45,6 +46,10 @@ loadEnv($env);
 
 $programStart = new DateTime();
 
+Logger::open($GLOBALS);
+Logger::logger()->setLogLevel(Logger::INFO);
+Logger::logger()->info('UPLOAD-TO-SQLSVR STARTED ENV: ' . $env);
+
 $local = connectLocalDb();
 
 $lastProcessedScraperJobId = 0;
@@ -61,8 +66,9 @@ $scraperStartedAt = 0;
 if ($unprocessedScraperJob) {
   $scraperJobId = $unprocessedScraperJob->id;
   $scraperStartedAt = $unprocessedScraperJob->startedAt;
+  Logger::logger()->info('Found Unprocessed Scraper Job: ' . $scraperJobId);
 } else {
-  print "No Unprocessed Job\n";
+  Logger::logger()->info('No Unprocessed Scraper Job');
 }
 
 $status = $jobStatus->skipped;
@@ -85,14 +91,15 @@ if ($scraperStartedAt > 0) {
     $remote->close();
     $status = $jobStatus->completed;
   } else {
-    print "No Unprocessed Data\n";
+    Logger::logger()->info('No Unprocessed Data');
   }
 }
 
 $local->updateUploaderSqlSvrJob($jobId, $status, $total, $updated);
 closeLocalDb($local);
 
-print $updated . '/' . $total . " Rows Updated\n";
-print "Completed! " . elapsedTime($programStart) . PHP_EOL;
+Logger::logger()->info($updated . '/' . $total . ' Rows Updated');
+Logger::logger()->info('UPLOAD-TO-SQLSVR COMPLETED! ' . elapsedTime($programStart));
+Logger::close();
 
 ?>
