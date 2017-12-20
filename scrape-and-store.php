@@ -40,6 +40,7 @@ require_once 'lib/enum.php';
 require_once 'lib/curl.php';
 require_once 'lib/measure_parser.php';
 require_once 'lib/local_measure.php';
+require_once 'lib/logger.php';
 
 function usage($argv) {
   echo "Wrong parameters were given:\n\n";
@@ -67,6 +68,10 @@ $jobStatus = Enum::getJobStatus();
 
 loadEnv($env);
 
+Logger::open($GLOBALS);
+Logger::logger()->setLogLevel(Logger::INFO);
+Logger::logger()->info('SCRAPE-AND-STORE STARTED ENV: ' . $env . ', YEAR: ' . $year);
+
 function checkCapitolSiteUpdate($year, $type, $dbg) {
   $start = new DateTime();
 
@@ -90,7 +95,8 @@ function checkCapitolSiteUpdate($year, $type, $dbg) {
     $data = $curl->getResult();
   } 
 
-  print $title . " : " . $status . " => " . $dst . ' ' . elapsedTime($start);
+  Logger::logger()->info($title . " : " . $status . " => " . $dst . ' ' . elapsedTime($start));
+
   return (object)array('status' => $status, 'data' => $data,
     'oldMd5' => $curMd5, 'newMd5' => $newMd5);
 }
@@ -113,7 +119,8 @@ function updateLocalDb($db, $year, $type, $args) {
 
   $updatedNumber = $db->getRowAffected();
   $updated = ($updatedNumber > 0) ? TRUE : FALSE; 
-  print $updatedNumber . '/' . $cnt . " Rows " . elapsedTime($start);
+  Logger::logger()->info($year . ' ' . $type . ' UPDATED ' . $updatedNumber . '/' . $cnt . " Rows " . elapsedTime($start));
+
   return (object)array(
     'totalNumber' => $cnt,
     'updatedNumber' => $updatedNumber,
@@ -148,9 +155,7 @@ foreach ($measureTypes as $type => $val) {
   $scrapeRslt = checkCapitolSiteUpdate($year, $type, $dbg);
 
   if ($scrapeRslt->status == 'UPDATED') {
-    print " => DB UPDATE ";
     $dbRslt = updateLocalDb($db, $year, $type, $scrapeRslt);
-    print "\n";
     $totalNumber += $dbRslt->totalNumber;
     $updatedNumber += $dbRslt->updatedNumber;
     if ($dbRslt->updated) $updated = TRUE;
@@ -158,13 +163,14 @@ foreach ($measureTypes as $type => $val) {
       $dbRslt->totalNumber, $dbRslt->updatedNumber);
   } else {
     $db->insertScraperLog($jobId, $type, $jobStatus->skipped, $startedAt->getTimestamp(), 0, 0);
-    print " => DB UPDATE SKIPPED\n";
+    Logger::logger()->info($year . ' ' . $type . ' SKIPPED');
   }
 }
 
 $db->updateScraperJob($jobId, $jobStatus->completed, $totalNumber, $updatedNumber, $updated);
 closeDb($db);
 
-print "\nCompleted! " . elapsedTime($programStart) . PHP_EOL;
+Logger::logger()->info('SCRAPE-AND-STORE COMPLETED! '. elapsedTime($programStart));
+Logger::close();
 
 ?>
