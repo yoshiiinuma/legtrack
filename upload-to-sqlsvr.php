@@ -76,9 +76,6 @@ if ($scraperStartedAt > 0) {
   $data = $local->selectUpdated($scraperStartedAt);
   $total = sizeof($data);
 
-  print_r($data);
-  print "SIZE OF DATA: " . $total . PHP_EOL;
-
   if ($total > 0) {
     $remote = connectSqlsvr();
     foreach($data as $r) {
@@ -96,6 +93,6 @@ $local->updateUploaderSqlSvrJob($jobId, $status, $total, $updated);
 closeLocalDb($local);
 
 print $updated . '/' . $total . " Rows Updated\n";
-print "\nCompleted! " . elapsedTime($programStart) . PHP_EOL;
+print "Completed! " . elapsedTime($programStart) . PHP_EOL;
 
 ?>

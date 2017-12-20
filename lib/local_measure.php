@@ -349,7 +349,6 @@ HERE;
         ':scraperJobId' => $scraperJobId,
         ':startedAt' => (new DateTime())->getTimestamp(),
     );
-    print_r($args);
     if ($this->exec($this->insertUploaderSqlsvrJobSql, $args)) {
       return TRUE;
     }
