@@ -47,6 +47,7 @@ HERE;
        FROM scraperJobs
       WHERE status = 4
         AND id > :id
+        AND updatedNumber > 0
       ORDER BY startedAt ASC
       LIMIT 1
 HERE;
