@@ -54,10 +54,10 @@ class Curl {
     } catch (Exception $e) {
       if ($this->debug) echo "Exception got raised during curl_exec";
       $this->error = $e;
-      Logger::logger()->info('CURL_EXEC Exception');
-      Logger::logger()->info('CURL_ERRORNO: ' . curl_errno($this->ch));
-      Logger::logger()->info('CURL_ERROR: ' . curl_error($this->ch));
-      Logger::logger()->info('CURL_INFO: ' . curl_getinfo($this->ch));
+      Logger::logger()->error('CURL_EXEC Exception');
+      Logger::logger()->error('CURL_ERRORNO: ' . curl_errno($this->ch));
+      Logger::logger()->error('CURL_ERROR: ' . curl_error($this->ch));
+      Logger::logger()->error('CURL_INFO: ' . curl_getinfo($this->ch));
     }
     $this->close();
     if ($this->error) {
@@ -72,6 +72,7 @@ class Curl {
       }
       return false;
     } else if (!$this->result) {
+      Logger::logger()->error('CURL: No Data');
       die("No Result");
     }
     return true;
