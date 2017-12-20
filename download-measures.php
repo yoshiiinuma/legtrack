@@ -3,6 +3,7 @@ namespace legtrack;
 
 require_once 'lib/functions.php';
 require_once 'lib/curl.php';
+require_once 'lib/logger.php';
 
 /**
  *
@@ -65,6 +66,12 @@ if ($argc == 4) {
 $year = $argv[1];
 $measure = $argv[2];
 
+$pg = 'DOWNLOAD-MEASURES ';
+$conf = array('LOG_PATH', 'log/download-measures.log');
+Logger::open($conf);
+Logger::logger()->setLogLevel(Logger::INFO);
+Logger::logger()->info($pg . 'STARTED ENV: YEAR ' . $year . ' TYPE: ' . $measure);
+
 $dst = getResultPath($year, $measure);
 
 $curl = new Curl();
@@ -74,5 +81,8 @@ $curl->getMeasures($year, $measure);
 $curl->saveResult($dst);
 print "Saved => "$dst . ": " . $curl->getMd5() . PHP_EOL;
 //saveContents();
+Logger::logger()->info($pg . 'COMPLETED! Saved => ' . $dst . ": " . $curl->getMd5());
+Logger::close();
+
 
 ?>

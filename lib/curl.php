@@ -1,6 +1,8 @@
 <?php
 namespace legtrack;
 
+require_once 'lib/logger.php';
+
 class Curl {
   public $debug;
   private $ch;
@@ -34,9 +36,9 @@ class Curl {
     $r = $this->download($url);
     if ($this->debug) {
       if ($r) {
-        echo "Downloading measreus successfully completed\n";
+        echo "Downloading measures successfully completed\n";
       } else {
-        echo "Downloading measreus failed\n";
+        echo "Downloading measures failed\n";
       }
     }
     return $r;
@@ -52,6 +54,10 @@ class Curl {
     } catch (Exception $e) {
       if ($this->debug) echo "Exception got raised during curl_exec";
       $this->error = $e;
+      Logger::logger()->info('CURL_EXEC Exception');
+      Logger::logger()->info('CURL_ERRORNO: ' . curl_errno($this->ch));
+      Logger::logger()->info('CURL_ERROR: ' . curl_error($this->ch));
+      Logger::logger()->info('CURL_INFO: ' . curl_getinfo($this->ch));
     }
     $this->close();
     if ($this->error) {
