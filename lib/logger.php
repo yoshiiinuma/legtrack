@@ -3,8 +3,6 @@ namespace legtrack;
 
 use \Date;
 
-require_once 'lib/functions.php';
-
 class Logger {
   private static $instance;
   private $level;
@@ -22,6 +20,7 @@ class Logger {
     return self::$instance;
   }
 
+  //Expects 'LOG_PATH'
   static function open($conf) {
     if (!self::$instance) {
       self::$instance = new Logger($conf);
