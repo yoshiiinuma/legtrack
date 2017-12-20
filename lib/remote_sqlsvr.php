@@ -81,7 +81,7 @@ HERE;
     }
   }
 
-  public function getDns() {
+  public function getDsn() {
     return $this->dsn;
   }
 

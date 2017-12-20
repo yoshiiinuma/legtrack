@@ -208,7 +208,7 @@ HERE;
     }
   }
 
-  public function getDns() {
+  public function getDsn() {
     return "sqlite:".$this->path;
   }
 

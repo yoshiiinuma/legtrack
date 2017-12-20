@@ -74,7 +74,7 @@ HERE;
     }
   }
 
-  public function getDns() {
+  public function getDsn() {
     return "mysql:host=" . $this->host . ';dbname=' . $this->dbname;
   }
 

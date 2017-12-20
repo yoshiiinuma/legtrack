@@ -106,7 +106,7 @@ HERE;
   }
 
   //Override
-  public function getDns() {
+  public function getDsn() {
     die("Must Implement in subclass!");
   }
 
@@ -155,7 +155,7 @@ HERE;
   }
 
   public function connect() {
-    $r = $this->connectManually($this->getDns(), $this->user, $this->pass);
+    $r = $this->connectManually($this->getDsn(), $this->user, $this->pass);
     return $r;
   }
 
@@ -175,11 +175,11 @@ HERE;
     return $this->error;
   }
 
-  public function connectManually($dns, $user, $pass) {
+  public function connectManually($dsn, $user, $pass) {
     try {
       $opts = $this->getConnectionOptions();
       $this->error = NULL;
-      $this->conn = new PDO($dns, $user, $pass, $opts);
+      $this->conn = new PDO($dsn, $user, $pass, $opts);
       if ($this->conn) {
         return TRUE;
       }
