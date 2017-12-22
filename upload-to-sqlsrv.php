@@ -96,7 +96,7 @@ if ($scraperStartedAt > 0) {
   }
 }
 
-$local->updateUploaderSqlSvrJob($jobId, $status, $total, $updated);
+$local->updateUploaderSqlsrvJob($jobId, $status, $total, $updated);
 closeLocalDb($local);
 
 Logger::logger()->info($pg . $updated . '/' . $total . ' Rows Updated');
