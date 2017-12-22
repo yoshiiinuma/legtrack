@@ -24,8 +24,8 @@ $db->connect();
 
 $db->query(LocalMeasure::DROP_MEASURES_INDEX_SQL);
 $db->query(LocalMeasure::DROP_MEASURES_TABLE_SQL);
-//$db->query(LocalMeasure::DROP_HEARINGS_INDEX_SQL);
-//$db->query(LocalMeasure::DROP_HEARINGS_TABLE_SQL);
+$db->query(LocalMeasure::DROP_HEARINGS_INDEX_SQL);
+$db->query(LocalMeasure::DROP_HEARINGS_TABLE_SQL);
 
 $db->query(LocalMeasure::DROP_SCRAPER_JOBS_TABLE_SQL);
 $db->query(LocalMeasure::DROP_SCRAPER_LOGS_TABLE_SQL);
