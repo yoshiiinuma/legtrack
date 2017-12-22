@@ -16,13 +16,13 @@ class HearingParser extends BaseParser {
     $r->committee = $blk[0];
 
     $measureUrl = substr($blk[1], 9, strpos($blk[1], '">') - 9);
-    $billType = substr($measureUrl, strpos($measureUrl, 'billtype=') + 9);
-    $billNumber = substr($billType, strpos($billType, 'billnumber=') + 11);
-    $billType = substr($billType, 0, strpos($billType, '&amp;'));
+    $measureType = substr($measureUrl, strpos($measureUrl, 'billtype=') + 9);
+    $measureNumber = substr($measureType, strpos($measureType, 'billnumber=') + 11);
+    $measureType = substr($measureType, 0, strpos($measureType, '&amp;'));
 
     $r->measureRelativeUrl = $measureUrl;
-    $r->billType = $billType;
-    $r->billNumber = intval($billNumber);
+    $r->measureType = $measureType;
+    $r->measureNumber = intval($measureNumber);
 
     $r->code = strip_tags(substr($blk[1], 0, strpos($blk[1], '</a>') + 4));
     $r->description = substr($blk[1], strpos($blk[1], '</a>') + 4);
