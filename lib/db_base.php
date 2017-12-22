@@ -169,7 +169,6 @@ HERE;
         ':measureType' => $type,
         ':year' => $year,
         ':measureNumber' => $r->measureNumber,
-        //':lastUpdated' => Date("Y-m-d H:i:s"),
         ':lastUpdated' => (new DateTime())->getTimestamp(),
         ':code' => $r->code  ,
         ':measurePdfUrl' => $r->measurePdfUrl,
