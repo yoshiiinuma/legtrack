@@ -35,12 +35,16 @@ class DbBase {
       room nvarchar(32),
       notice nvarchar(256),
       noticeUrl nvarchar(512),
-      noticePdfUrl nvarchar(512),
+      noticePdfUrl nvarchar(512)
     );
 HERE;
 
   const CREATE_HEARINGS_INDEX_SQL = <<<HERE
     CREATE INDEX hearings_lastupdated_idx ON hearings(lastUpdated);
+HERE;
+
+  const DROP_HEARINGS_INDEX_SQL = <<<HERE
+    DROP INDEX hearings_lastupdated_idx ON hearings;
 HERE;
 
   const DROP_MEASURES_TABLE_SQL = "DROP TABLE IF EXISTS measures;";
@@ -69,6 +73,10 @@ HERE;
 
   const CREATE_MEASURES_INDEX_SQL = <<<HERE
     CREATE INDEX measures_lastupdated_idx ON measures(lastUpdated);
+HERE;
+
+  const DROP_MEASURES_INDEX_SQL = <<<HERE
+    DROP INDEX measures_lastupdated_idx ON measures;
 HERE;
 
   const SELECT_MEASURE_SQL = <<<HERE
@@ -122,7 +130,6 @@ HERE;
         :description, :status, :introducer, :currentReferral, :companion)
 HERE;
 
-
   const INSERT_HEARING_SQL = <<<HERE
      INSERT INTO hearing (
         year, measureType, measureNumber, measureRelativeUrl, code,
@@ -133,7 +140,6 @@ HERE;
         :committee, :lastUpdated, :timestamp, :datetime, :description,
         :room, :notice, :noticeUrl, :noticePdfUrl)
 HERE;
-
 
   public function __construct() {
     $this->ready = FALSE;
@@ -243,6 +249,8 @@ HERE;
       if (!$this->selectMeasureSql) { die('SELECT Measure SQL Preparation Failed' . PHP_EOL); }
       $this->selectUpdatedSql = $this->prepare(static::SELECT_UPDATED_SQL);
       if (!$this->selectUpdatedSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
+      $this->insertHearingSql = $this->prepare(static::INSERT_HEARING_SQL);
+      if (!$this->insertHearingSql) { die('INSERT Hearing SQL Preparation Failed' . PHP_EOL); }
       $this->ready = TRUE;
     }
   }

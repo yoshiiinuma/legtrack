@@ -123,6 +123,14 @@ HERE;
     );
 HERE;
 
+  const DROP_HEARINGS_INDEX_SQL = <<<HERE
+    DROP INDEX hearings_lastupdated_idx;
+HERE;
+
+  const DROP_MEASURES_INDEX_SQL = <<<HERE
+    DROP INDEX measures_lastupdated_idx;
+HERE;
+
   const DROP_UPLOADER_MYSQL_JOBS_TABLE_SQL = "DROP TABLE IF EXISTS uploaderMysqlJobs;";
 
   const DROP_UPLOADER_SQLSRV_JOBS_TABLE_SQL = "DROP TABLE IF EXISTS uploaderSqlsrvJobs;";
