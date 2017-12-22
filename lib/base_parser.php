@@ -57,11 +57,13 @@ class BaseParser {
   }
 
   //Override
+  //Populates data and size using raw
   protected function parse() {
     die("Must Implement in subclass!");
   }
 
   //Override
+  //Returns the current data and  forward the pointer
   protected function extractData($blk) {
     die("Must Implement in subclass!");
   }
