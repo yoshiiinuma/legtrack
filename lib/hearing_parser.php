@@ -28,6 +28,7 @@ class HearingParser extends BaseParser {
     $r->description = substr($blk[1], strpos($blk[1], '</a>') + 4);
     $r->datetime = $blk[2];
     $r->timestamp = strtotime($blk[2]);
+    $r->year = date_parse($blk[2])['year'];
     $r->room = $blk[3];
 
     //td5 contains two anchors for notice and pdf
