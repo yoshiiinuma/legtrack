@@ -1,68 +1,17 @@
 <?php
 namespace legtrack;
 
-class MeasureParser {
-  public $dbg;
-  private $raw;
-  private $data;
-  private $size;
-  private $cur;
+require_once 'lib/base_parser.php';
+
+class MeasureParser extends BaseParser {
   //const MTA = array("","HB","SB","HR","SR","HCR","SCR","GM");
 
-  public function __construct($dbg = FALSE) {
-    $this->dbg = $dbg;
-    $this->raw = NULL;
-    $this->data = NULL;
-    $this->size = 0;
-    $this->cur = 0;
-  }
-
-  public function start($raw) {
-    $this->setRawData($raw);
-    $this->parse();
-  }
-
-  public function startParsingFile($file) {
-    $this->readData($file);
-    $this->parse();
-  }
-
-  public function setRawData($raw) {
-    $this->raw = $raw;
-  } 
-
-  public function readData($file) {
-    if (!file_exists($file)) {
-      die("File Not Exists: ".$file.PHP_EOL);
-    }
-    $this->raw = file_get_contents($file);
-  } 
-
-  public function hasNext() {
-    return ($this->cur < $this->size);
-  }
-
-  public function getNext() {
-    $r = $this->extractData($this->data[$this->cur]);
-    $this->cur++;
-    return $r;
-  }
-
-  //Not forward the pointer
-  public function getCurrent() {
-    return $this->extractData($this->data[$this->cur]);
-  }
-
-  public function getCurrentSrc() {
-    return $this->data[$this->cur];
-  }
-
-  private function parse() {
+  protected function parse() {
     $tds = $this->parseTds($this->raw);
     $this->convertTds($tds);
   }
 
-  private function extractData($blk) {
+  protected function extractData($blk) {
    $mturl = substr($blk[0],strpos($blk[0],'"')+1);
    $mturl = htmlspecialchars_decode(substr($mturl,0,strpos($mturl,'"')));
    $mturl = substr($mturl,0,512);
