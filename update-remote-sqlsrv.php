@@ -3,13 +3,13 @@ namespace legtrack;
 
 require_once 'lib/functions.php';
 require_once 'lib/local_measure.php';
-require_once 'lib/remote_sqlsvr.php';
+require_once 'lib/remote_sqlsrv.php';
 
 function usage($argv) {
   echo "Wrong parameters were given:\n\n";
   print_r($argv);
   echo "\n";
-  echo "UASGE: php update-remote-sqlsvr.php <LAST-UPDATED-TIME> [<env>]\n\n";
+  echo "UASGE: php update-remote-sqlsrv.php <LAST-UPDATED-TIME> [<env>]\n\n";
   echo "  time: YYYY-MM-DD HH:mm:ss\n\n";
   echo "  env:\n";
   echo "    production | development | test\n\n";
@@ -37,16 +37,16 @@ $local->connect();
 
 $updated = $local->selectUpdated($time);
 
-$sqlsvr = new RemoteSqlsvr();
-$sqlsvr->configure($GLOBALS);
-$sqlsvr->connect();
+$sqlsrv = new RemoteSqlsrv();
+$sqlsrv->configure($GLOBALS);
+$sqlsrv->connect();
 
 $cnt = 0;
 foreach($updated as $r) {
   print_r($r);
   $cnt++;
-  $sqlsvr->upsertMeasure($r);
+  $sqlsrv->upsertMeasure($r);
 }
 
-print "\n " . $cnt . " rows selected => " . $sqlsvr->getRowAffected() . " rows updated\n";
+print "\n " . $cnt . " rows selected => " . $sqlsrv->getRowAffected() . " rows updated\n";
 ?>

@@ -5,7 +5,7 @@ use \DateTime;
 
 require_once 'lib/db_base.php';
 
-class RemoteSqlsvr extends DbBase {
+class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
@@ -70,14 +70,14 @@ HERE;
 HERE;
 
   public function configure($conf) {
-    $this->user = $conf['SQLSVR_USER'];
-    $this->pass = $conf['SQLSVR_PASS'];
-    $this->dsn = $conf['SQLSVR_DSN'];
-    $this->dbname = $conf['SQLSVR_DATABASE'];
+    $this->user = $conf['SQLSRV_USER'];
+    $this->pass = $conf['SQLSRV_PASS'];
+    $this->dsn = $conf['SQLSRV_DSN'];
+    $this->dbname = $conf['SQLSRV_DATABASE'];
 
     if (!$this->user || !$this->pass || !$this->dsn || !$this->dbname) {
       print_r($conf);
-      die('SQLSVR: Invalid Configuration'.PHP_EOL);
+      die('SQLSRV: Invalid Configuration'.PHP_EOL);
     }
   }
 

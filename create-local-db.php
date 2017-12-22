@@ -34,8 +34,8 @@ $db->query(LocalMeasure::CREATE_SCRAPER_LOGS_INDEX_SQL);
 $db->query(LocalMeasure::CREATE_UPLOADER_MYSQL_JOBS_TABLE_SQL);
 $db->query(LocalMeasure::CREATE_UPLOADER_MYSQL_JOBS_INDEX_SQL);
 
-$db->query(LocalMeasure::CREATE_UPLOADER_SQLSVR_JOBS_TABLE_SQL);
-$db->query(LocalMeasure::CREATE_UPLOADER_SQLSVR_JOBS_INDEX_SQL);
+$db->query(LocalMeasure::CREATE_UPLOADER_SQLSRV_JOBS_TABLE_SQL);
+$db->query(LocalMeasure::CREATE_UPLOADER_SQLSRV_JOBS_INDEX_SQL);
 
 $db->close();
 ?>

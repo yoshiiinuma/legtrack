@@ -18,9 +18,9 @@ class LocalMeasure extends DbBase {
   protected $updateUploaderMysqlJobSql;
   protected $selectUploaderMysqlJobSql;
 
-  protected $insertUploaderSqlsvrJobSql;
-  protected $updateUploaderSqlsvrJobSql;
-  protected $selectUploaderSqlsvrJobSql;
+  protected $insertUploaderSqlsrvJobSql;
+  protected $updateUploaderSqlsrvJobSql;
+  protected $selectUploaderSqlsrvJobSql;
 
   //STATUS 1) STARTED 2) FAILED 3) COMPLETED
   const CREATE_SCRAPER_JOBS_TABLE_SQL = <<<HERE
@@ -110,8 +110,8 @@ HERE;
 HERE;
 
   //STATUS 1) STARTED 2) SKIPPED 3) FAILED 4) COMPLETED
-  const CREATE_UPLOADER_SQLSVR_JOBS_TABLE_SQL = <<<HERE
-    CREATE TABLE IF NOT EXISTS uploaderSqlsvrJobs
+  const CREATE_UPLOADER_SQLSRV_JOBS_TABLE_SQL = <<<HERE
+    CREATE TABLE IF NOT EXISTS uploaderSqlsrvJobs
     (
       id integer PRIMARY KEY,
       scraperJobId int unsigned NOT NULL,
@@ -125,14 +125,14 @@ HERE;
 
   const DROP_UPLOADER_MYSQL_JOBS_TABLE_SQL = "DROP TABLE IF EXISTS uploaderMysqlJobs;";
 
-  const DROP_UPLOADER_SQLSVR_JOBS_TABLE_SQL = "DROP TABLE IF EXISTS uploaderSqlsvrJobs;";
+  const DROP_UPLOADER_SQLSRV_JOBS_TABLE_SQL = "DROP TABLE IF EXISTS uploaderSqlsrvJobs;";
 
   const CREATE_UPLOADER_MYSQL_JOBS_INDEX_SQL = <<<HERE
     CREATE INDEX uploaderMysqlJobsIdx ON uploaderMysqlJobs(status, startedAt);
 HERE;
 
-  const CREATE_UPLOADER_SQLSVR_JOBS_INDEX_SQL = <<<HERE
-    CREATE INDEX uploaderSqlsvrJobsIdx ON uploaderSqlsvrJobs(status, startedAt);
+  const CREATE_UPLOADER_SQLSRV_JOBS_INDEX_SQL = <<<HERE
+    CREATE INDEX uploaderSqlsrvJobsIdx ON uploaderSqlsrvJobs(status, startedAt);
 HERE;
 
   const INSERT_UPLOADER_MYSQL_JOB_SQL = <<<HERE
@@ -142,8 +142,8 @@ HERE;
         :scraperJobId, 1, :startedAt, 0, 0)
 HERE;
 
-  const INSERT_UPLOADER_SQLSVR_JOB_SQL = <<<HERE
-     INSERT INTO uploaderSqlsvrJobs (
+  const INSERT_UPLOADER_SQLSRV_JOB_SQL = <<<HERE
+     INSERT INTO uploaderSqlsrvJobs (
         scraperJobId, status, startedAt, totalNumber, updatedNumber)
      VALUES (
         :scraperJobId, 1, :startedAt, 0, 0)
@@ -158,8 +158,8 @@ HERE;
       WHERE id = :id
 HERE;
 
-  const UPDATE_UPLOADER_SQLSVR_JOB_SQL = <<<HERE
-     UPDATE uploaderSqlsvrJobs
+  const UPDATE_UPLOADER_SQLSRV_JOB_SQL = <<<HERE
+     UPDATE uploaderSqlsrvJobs
         SET status = :status,
             completedAt = :completedAt,
             totalNumber = :totalNumber,
@@ -175,9 +175,9 @@ HERE;
       LIMIT 1
 HERE;
 
-  const SELECT_LATEST_SQLSVR_UPLOAD_SQL = <<<HERE
+  const SELECT_LATEST_SQLSRV_UPLOAD_SQL = <<<HERE
      SELECT scraperJobId
-       FROM uploaderSqlsvrJobs
+       FROM uploaderSqlsrvJobs
       WHERE status = 4
       ORDER BY startedAt DESC
       LIMIT 1
@@ -232,12 +232,12 @@ HERE;
       $this->selectUploaderMysqlJobSql = $this->prepare(static::SELECT_LATEST_MYSQL_UPLOAD_SQL);
       if (!$this->selectUploaderMysqlJobSql) { die('SELECT UploaderMysqlJob SQL Preparation Failed' . PHP_EOL); }
 
-      $this->insertUploaderSqlsvrJobSql = $this->prepare(static::INSERT_UPLOADER_SQLSVR_JOB_SQL);
-      if (!$this->insertUploaderSqlsvrJobSql) { die('INSERT UploaderSqlsvrJob SQL Preparation Failed' . PHP_EOL); }
-      $this->updateUploaderSqlsvrJobSql = $this->prepare(static::UPDATE_UPLOADER_SQLSVR_JOB_SQL);
-      if (!$this->updateUploaderSqlsvrJobSql) { die('UPDATE UploaderSqlsvrJob SQL Preparation Failed' . PHP_EOL); }
-      $this->selectUploaderSqlsvrJobSql = $this->prepare(static::SELECT_LATEST_SQLSVR_UPLOAD_SQL);
-      if (!$this->selectUploaderSqlsvrJobSql) { die('SELECT UploaderSqlsvrJob SQL Preparation Failed' . PHP_EOL); }
+      $this->insertUploaderSqlsrvJobSql = $this->prepare(static::INSERT_UPLOADER_SQLSRV_JOB_SQL);
+      if (!$this->insertUploaderSqlsrvJobSql) { die('INSERT UploaderSqlsrvJob SQL Preparation Failed' . PHP_EOL); }
+      $this->updateUploaderSqlsrvJobSql = $this->prepare(static::UPDATE_UPLOADER_SQLSRV_JOB_SQL);
+      if (!$this->updateUploaderSqlsrvJobSql) { die('UPDATE UploaderSqlsrvJob SQL Preparation Failed' . PHP_EOL); }
+      $this->selectUploaderSqlsrvJobSql = $this->prepare(static::SELECT_LATEST_SQLSRV_UPLOAD_SQL);
+      if (!$this->selectUploaderSqlsrvJobSql) { die('SELECT UploaderSqlsrvJob SQL Preparation Failed' . PHP_EOL); }
     }
     parent::setupStatements();
   }
@@ -343,22 +343,22 @@ HERE;
     return NULL;
   }
 
-  public function insertUploaderSqlsvrJob($scraperJobId) {
+  public function insertUploaderSqlsrvJob($scraperJobId) {
     $this->setupStatements();
-    if (!$this->insertUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
+    if (!$this->insertUploaderSqlsrvJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':scraperJobId' => $scraperJobId,
         ':startedAt' => (new DateTime())->getTimestamp(),
     );
-    if ($this->exec($this->insertUploaderSqlsvrJobSql, $args)) {
+    if ($this->exec($this->insertUploaderSqlsrvJobSql, $args)) {
       return TRUE;
     }
     return NULL;
   }
 
-  public function updateUploaderSqlsvrJob($id, $status, $totalNumber, $updatedNumber) {
+  public function updateUploaderSqlsrvJob($id, $status, $totalNumber, $updatedNumber) {
     $this->setupStatements();
-    if (!$this->updateUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
+    if (!$this->updateUploaderSqlsrvJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
         ':id' => $id,
         ':status' => $status,
@@ -366,21 +366,21 @@ HERE;
         ':totalNumber' => $totalNumber,
         ':updatedNumber' => $updatedNumber,
     );
-    if ($this->exec($this->updateUploaderSqlsvrJobSql, $args)) {
+    if ($this->exec($this->updateUploaderSqlsrvJobSql, $args)) {
       return TRUE;
     }
-    $this->error = $this->updateUploaderSqlsvrJobSql->errorInfo();
+    $this->error = $this->updateUploaderSqlsrvJobSql->errorInfo();
     return NULL;
   }
 
-  public function selectLatestUploaderSqlsvrJob() {
+  public function selectLatestUploaderSqlsrvJob() {
     $this->setupStatements();
-    if (!$this->selectUploaderSqlsvrJobSql) die('No SQL Prepared' . PHP_EOL);
+    if (!$this->selectUploaderSqlsrvJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array();
-    if ($this->exec($this->selectUploaderSqlsvrJobSql, $args)) {
-      return $this->selectUploaderSqlsvrJobSql->fetchObject();
+    if ($this->exec($this->selectUploaderSqlsrvJobSql, $args)) {
+      return $this->selectUploaderSqlsrvJobSql->fetchObject();
     }
-    $this->error = $this->selectUploaderSqlsvrJobSql->errorInfo();
+    $this->error = $this->selectUploaderSqlsrvJobSql->errorInfo();
     return NULL;
   }
 

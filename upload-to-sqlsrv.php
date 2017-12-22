@@ -6,11 +6,11 @@ use \DateTime;
 require_once 'lib/functions.php';
 require_once 'lib/enum.php';
 require_once 'lib/local_measure.php';
-require_once 'lib/remote_sqlsvr.php';
+require_once 'lib/remote_sqlsrv.php';
 require_once 'lib/logger.php';
 
 function usage($argv) {
-  echo "\nUASGE: php create-remote-sqlsvr.php <env>\n\n";
+  echo "\nUASGE: php create-remote-sqlsrv.php <env>\n\n";
   echo "  env: development|test|production\n";
 }
 
@@ -25,10 +25,10 @@ function closeLocalDb($db) {
   $db->close();
 }
 
-function connectSqlsvr() {
-  $db = new RemoteSqlsvr();
+function connectSqlsrv() {
+  $db = new RemoteSqlsrv();
   $db->configure($GLOBALS);
-  $db->connect() || die('Sqlsvr Conncection Failed'. PHP_EOL);
+  $db->connect() || die('Sqlsrv Conncection Failed'. PHP_EOL);
   return $db;
 }
 
@@ -41,7 +41,7 @@ $env = ($argc == 2) ? $argv[1]: 'development';
 
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
-$pg = 'UPLOAD-TO-SQLSVR ';
+$pg = 'UPLOAD-TO-SQLSRV ';
 
 loadEnv($env);
 
@@ -54,7 +54,7 @@ Logger::logger()->info($pg . 'STARTED ENV: ' . $env);
 $local = connectLocalDb();
 
 $lastProcessedScraperJobId = 0;
-$lastUpload = $local->selectLatestUploaderSqlsvrJob();
+$lastUpload = $local->selectLatestUploaderSqlsrvJob();
 if ($lastUpload) {
   $lastProcessedScraperJobId = $lastUpload->scraperJobId;
 }
@@ -76,7 +76,7 @@ $status = $jobStatus->skipped;
 $total = 0;
 $updated = 0;
 
-$local->insertUploaderSqlsvrJob($scraperJobId);
+$local->insertUploaderSqlsrvJob($scraperJobId);
 $jobId = $local->getLastInsertId();
 
 if ($scraperStartedAt > 0) {
@@ -84,7 +84,7 @@ if ($scraperStartedAt > 0) {
   $total = sizeof($data);
 
   if ($total > 0) {
-    $remote = connectSqlsvr();
+    $remote = connectSqlsrv();
     foreach($data as $r) {
       $remote->upsertMeasure($r);
     }
