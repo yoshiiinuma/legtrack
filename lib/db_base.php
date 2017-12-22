@@ -15,6 +15,33 @@ class DbBase {
   protected $upsertMeasureSql;
   protected $selectMeasureSql;
   protected $selectUpdatedSql;
+  protected $insertHearingSql;
+
+  const DROP_HEARINGS_TABLE_SQL = "DROP TABLE IF EXISTS hearings;";
+
+  const CREATE_HEARINGS_TABLE_SQL = <<<HERE
+    CREATE TABLE IF NOT EXISTS hearings
+    (
+      year smallint NOT NULL,
+      measureType nchar(3) NOT NULL,
+      measureNumber smallint NOT NULL,
+      measureRelativeUrl nvarchar(512),
+      code nvarchar(64),
+      committee nvarchar(256),
+      lastUpdated datetime,
+      timestamp datetime,
+      datetime nvarchar(32),
+      description nvarchar(512),
+      room nvarchar(32),
+      notice nvarchar(256),
+      noticeUrl nvarchar(512),
+      noticePdfUrl nvarchar(512),
+    );
+HERE;
+
+  const CREATE_HEARINGS_INDEX_SQL = <<<HERE
+    CREATE INDEX hearings_lastupdated_idx ON hearings(lastUpdated);
+HERE;
 
   const DROP_MEASURES_TABLE_SQL = "DROP TABLE IF EXISTS measures;";
 
@@ -94,6 +121,19 @@ HERE;
         :measureArchiveUrl, :measureTitle, :reportTitle, :bitAppropriation,
         :description, :status, :introducer, :currentReferral, :companion)
 HERE;
+
+
+  const INSERT_HEARING_SQL = <<<HERE
+     INSERT INTO hearing (
+        year, measureType, measureNumber, measureRelativeUrl, code,
+        committee, lastUpdated, timestamp, datetime, description,
+        room, notice, noticeUrl, noticePdfUrl)
+     VALUES (
+        :year, :measureType, :measureNumber, :measureRelativeUrl, :code,
+        :committee, :lastUpdated, :timestamp, :datetime, :description,
+        :room, :notice, :noticeUrl, :noticePdfUrl)
+HERE;
+
 
   public function __construct() {
     $this->ready = FALSE;
