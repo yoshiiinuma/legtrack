@@ -131,7 +131,7 @@ HERE;
 HERE;
 
   const INSERT_HEARING_SQL = <<<HERE
-     INSERT INTO hearing (
+     INSERT INTO hearings (
         year, measureType, measureNumber, measureRelativeUrl, code,
         committee, lastUpdated, timestamp, datetime, description,
         room, notice, noticeUrl, noticePdfUrl)
@@ -181,6 +181,26 @@ HERE;
         ':introducer' => $r->introducer,
         ':currentReferral' => $r->currentReferral,
         ':companion' => $r->companion,
+    );
+  }
+
+  protected function createInsertHearingArgs($r) {
+    return array(
+        ':year' => $r->year,
+        ':measureType' => $r->measureType,
+        ':measureNumber' => $r->measureNumber,
+        ':measureRelativeUrl' => $r->measureRelativeUrl,
+        ':code' => $r->code,
+        ':committee' => $r->committee,
+        ':lastUpdated' => (new DateTime())->getTimestamp(),
+        ':timestamp' => $r->timestamp,
+        ':datetime' => $r->datetime,
+        ':description' => $r->description,
+        ':room' => $r->room,
+        ':description' => $r->description,
+        ':notice' => $r->notice,
+        ':noticeUrl' => $r->noticeUrl,
+        ':noticePdfUrl' => $r->noticePdfUrl,
     );
   }
 
@@ -399,6 +419,19 @@ HERE;
     }
     $this->error = $this->insertMeasureSql->errorInfo();
     Logger::logger()->error('INSERT MEASURE: ', $this->error);
+    return NULL;
+  }
+
+  public function insertHearing($r) {
+    $this->setupStatements();
+    if (!$this->insertHearingSql) die('No SQL Prepared' . PHP_EOL);
+    $args = $this->createInsertHearingArgs($r);
+    if ($this->exec($this->insertHearingSql, $args)) {
+      $this->rowAffected += $this->insertHearingSql->rowCount();
+      return TRUE;
+    }
+    $this->error = $this->insertHearingSql->errorInfo();
+    Logger::logger()->error('INSERT HEARING: ', $this->error);
     return NULL;
   }
 

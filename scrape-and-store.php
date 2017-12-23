@@ -3,7 +3,9 @@
  *
  * Require PHP >= 7.0
  *
- * Capitol Deadline Tracking Page < Reports and Lists Page
+ * Scrape and Store measures from:
+ *
+ *   Capitol Deadline Tracking Page < Reports and Lists Page
  *
  *   e.g.
  *     http://capitol.hawaii.gov/advreports/advreport.aspx?year=2017&report=deadline&active=true&rpt_type=&measuretype=hb
@@ -28,6 +30,13 @@
  *      hcr: House Concurrent Resos
  *      scr: Senate Concurrent Resos
  *      gm:  Governer's Messages
+ *
+ * UASGE:
+ *
+ *   php scrape-and-store.php [env] [year] [debug]
+ *
+ *      env: production | development | test (default development)
+ *           need configuration under config for the selected env
  *
  **/
 

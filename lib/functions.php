@@ -46,4 +46,12 @@ function getFileMd5($year, $measure) {
   return md5_file($file);
 }
 
+function getCurrentHearingsPath() {
+  return './results/current_hearings.html';
+}
+
+function getCurrentHearingFileMd5() {
+  return md5_file(getCurrentHearingsPath());
+}
+
 ?>

@@ -44,6 +44,28 @@ class Curl {
     return $r;
   }
   
+  public function getCurrentHearingsUrl() {
+    $url = "https://www.capitol.hawaii.gov/upcominghearings.aspx";
+    return $url;
+  }
+
+  public function getCurrentHearings() {
+    if ($this->debug) echo "Trying to connect to captiol\n";
+    if (!$this->ch) {
+      die("No curl handler\n");
+    }
+    $url = $this->getCurrentHearingsUrl();
+    $r = $this->download($url);
+    if ($this->debug) {
+      if ($r) {
+        echo "Downloading measures successfully completed\n";
+      } else {
+        echo "Downloading measures failed\n";
+      }
+    }
+    return $r;
+  }
+
   private function download($url) {
     try {
       $this->setDefaultOptions();
