@@ -39,6 +39,7 @@ if ($argc < 1 || $argc > 2) {
 
 $env = ($argc == 2) ? $argv[1]: 'development';
 
+$dataTypes = Enum::getDataTypes();
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
 $pg = 'UPLOAD-TO-SQLSRV ';
@@ -54,12 +55,12 @@ Logger::logger()->info($pg . 'STARTED ENV: ' . $env);
 $local = connectLocalDb();
 
 $lastProcessedScraperJobId = 0;
-$lastUpload = $local->selectLatestUploaderSqlsrvJob();
+$lastUpload = $local->selectLatestUploaderSqlsrvJob($dataTypes->measures);
 if ($lastUpload) {
   $lastProcessedScraperJobId = $lastUpload->scraperJobId;
 }
 
-$unprocessedScraperJob = $local->selectScraperJobUpdatedAfter($lastProcessedScraperJobId);
+$unprocessedScraperJob = $local->selectScraperJobUpdatedAfter($lastProcessedScraperJobId, $dataTypes->measures);
 
 $scraperJobId = 0;
 $scraperStartedAt = 0;
@@ -76,7 +77,7 @@ $status = $jobStatus->skipped;
 $total = 0;
 $updated = 0;
 
-$local->insertUploaderSqlsrvJob($scraperJobId);
+$local->insertUploaderSqlsrvJob($scraperJobId, $dataTypes->measures);
 $jobId = $local->getLastInsertId();
 
 if ($scraperStartedAt > 0) {

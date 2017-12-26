@@ -22,11 +22,12 @@ class LocalMeasure extends DbBase {
   protected $updateUploaderSqlsrvJobSql;
   protected $selectUploaderSqlsrvJobSql;
 
-  //STATUS 1) STARTED 2) FAILED 3) COMPLETED
+  //STATUS 1) STARTED 2) SKIPPED 3) FAILED 4) COMPLETED
   const CREATE_SCRAPER_JOBS_TABLE_SQL = <<<HERE
     CREATE TABLE IF NOT EXISTS scraperJobs
     (
       id integer PRIMARY KEY AUTOINCREMENT,
+      dataType tinyint NOT NULL,
       status tinyint NOT NULL,
       startedAt int NOT NULL,
       completedAt int,
@@ -39,13 +40,14 @@ HERE;
   const DROP_SCRAPER_JOBS_TABLE_SQL = "DROP TABLE IF EXISTS scraperJobs;";
 
   const CREATE_SCRAPER_JOBS_INDEX_SQL = <<<HERE
-    CREATE INDEX scraperJobsIdx ON scraperJobs(status, startedAt);
+    CREATE INDEX scraperJobsIdx ON scraperJobs(dataType, status, startedAt);
 HERE;
 
   const SELECT_SCRAPER_JOB_UPDATED_AFTER_SQL = <<<HERE
      SELECT id, startedAt
        FROM scraperJobs
       WHERE status = 4
+        AND dataType = :dataType
         AND id > :id
         AND updatedNumber > 0
       ORDER BY startedAt ASC
@@ -54,9 +56,9 @@ HERE;
 
   const INSERT_SCRAPER_JOB_SQL = <<<HERE
      INSERT INTO scraperJobs (
-        status, startedAt, totalNumber, updatedNumber, updateNeeded)
+        dataType, status, startedAt, totalNumber, updatedNumber, updateNeeded)
      VALUES (
-        1, :startedAt, 0, 0, 0)
+        :dataType, 1, :startedAt, 0, 0, 0)
 HERE;
 
   const UPDATE_SCRAPER_JOB_SQL = <<<HERE
@@ -100,6 +102,7 @@ HERE;
     CREATE TABLE IF NOT EXISTS uploaderMysqlJobs
     (
       id integer PRIMARY KEY,
+      dataType tinyint NOT NULL,
       scraperJobId int unsigned NOT NULL,
       status tinyint NOT NULL,
       startedAt int NOT NULL,
@@ -114,6 +117,7 @@ HERE;
     CREATE TABLE IF NOT EXISTS uploaderSqlsrvJobs
     (
       id integer PRIMARY KEY,
+      dataType tinyint NOT NULL,
       scraperJobId int unsigned NOT NULL,
       status tinyint NOT NULL,
       startedAt int NOT NULL,
@@ -136,25 +140,25 @@ HERE;
   const DROP_UPLOADER_SQLSRV_JOBS_TABLE_SQL = "DROP TABLE IF EXISTS uploaderSqlsrvJobs;";
 
   const CREATE_UPLOADER_MYSQL_JOBS_INDEX_SQL = <<<HERE
-    CREATE INDEX uploaderMysqlJobsIdx ON uploaderMysqlJobs(status, startedAt);
+    CREATE INDEX uploaderMysqlJobsIdx ON uploaderMysqlJobs(dataType, status, startedAt);
 HERE;
 
   const CREATE_UPLOADER_SQLSRV_JOBS_INDEX_SQL = <<<HERE
-    CREATE INDEX uploaderSqlsrvJobsIdx ON uploaderSqlsrvJobs(status, startedAt);
+    CREATE INDEX uploaderSqlsrvJobsIdx ON uploaderSqlsrvJobs(dataType, status, startedAt);
 HERE;
 
   const INSERT_UPLOADER_MYSQL_JOB_SQL = <<<HERE
      INSERT INTO uploaderMysqlJobs (
-        scraperJobId, status, startedAt, totalNumber, updatedNumber)
+        dataType, scraperJobId, status, startedAt, totalNumber, updatedNumber)
      VALUES (
-        :scraperJobId, 1, :startedAt, 0, 0)
+        :dataType, :scraperJobId, 1, :startedAt, 0, 0)
 HERE;
 
   const INSERT_UPLOADER_SQLSRV_JOB_SQL = <<<HERE
      INSERT INTO uploaderSqlsrvJobs (
-        scraperJobId, status, startedAt, totalNumber, updatedNumber)
+        dataType, scraperJobId, status, startedAt, totalNumber, updatedNumber)
      VALUES (
-        :scraperJobId, 1, :startedAt, 0, 0)
+        :dataType, :scraperJobId, 1, :startedAt, 0, 0)
 HERE;
 
   const UPDATE_UPLOADER_MYSQL_JOB_SQL = <<<HERE
@@ -179,6 +183,7 @@ HERE;
      SELECT scraperJobId
        FROM uploaderMysqlJobs
       WHERE status = 4
+        AND dataType = :dataType
       ORDER BY startedAt DESC
       LIMIT 1
 HERE;
@@ -187,6 +192,7 @@ HERE;
      SELECT scraperJobId
        FROM uploaderSqlsrvJobs
       WHERE status = 4
+        AND dataType = :dataType
       ORDER BY startedAt DESC
       LIMIT 1
 HERE;
@@ -250,11 +256,12 @@ HERE;
     parent::setupStatements();
   }
 
-  public function insertScraperJob() {
+  public function insertScraperJob($dataType) {
     $this->setupStatements();
     if (!$this->insertScraperJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
-        ':startedAt' => (new DateTime())->getTimestamp(),
+      ':dataType' => $dataType, 
+      ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertScraperJobSql, $args)) {
       return TRUE;
@@ -281,10 +288,13 @@ HERE;
     return NULL;
   }
 
-  public function selectScraperJobUpdatedAfter($scraperJobId) {
+  public function selectScraperJobUpdatedAfter($scraperJobId, $dataType) {
     $this->setupStatements();
     if (!$this->selectScraperJobSql) die('No SQL Prepared' . PHP_EOL);
-    $args = array(':id' => $scraperJobId);
+    $args = array(
+      ':id' => $scraperJobId,
+      ':dataType' => $dataType,
+    );
     if ($this->exec($this->selectScraperJobSql, $args)) {
       return $this->selectScraperJobSql->fetchObject();
     }
@@ -310,12 +320,13 @@ HERE;
     return NULL;
   }
 
-  public function insertUploaderMysqlJob($scraperJobId) {
+  public function insertUploaderMysqlJob($scraperJobId, $dataType) {
     $this->setupStatements();
     if (!$this->insertUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
-        ':scraperJobId' => $scraperJobId,
-        ':startedAt' => (new DateTime())->getTimestamp(),
+      ':dataType' => $dataType, 
+      ':scraperJobId' => $scraperJobId,
+      ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertUploaderMysqlJobSql, $args)) {
       return TRUE;
@@ -340,10 +351,10 @@ HERE;
     return NULL;
   }
 
-  public function selectLatestUploaderMysqlJob() {
+  public function selectLatestUploaderMysqlJob($dataType) {
     $this->setupStatements();
     if (!$this->selectUploaderMysqlJobSql) die('No SQL Prepared' . PHP_EOL);
-    $args = array();
+    $args = array(':dataType' => $dataType);
     if ($this->exec($this->selectUploaderMysqlJobSql, $args)) {
       return $this->selectUploaderMysqlJobSql->fetchObject();
     }
@@ -351,12 +362,13 @@ HERE;
     return NULL;
   }
 
-  public function insertUploaderSqlsrvJob($scraperJobId) {
+  public function insertUploaderSqlsrvJob($scraperJobId, $dataType) {
     $this->setupStatements();
     if (!$this->insertUploaderSqlsrvJobSql) die('No SQL Prepared' . PHP_EOL);
     $args = array(
-        ':scraperJobId' => $scraperJobId,
-        ':startedAt' => (new DateTime())->getTimestamp(),
+      ':dataType' => $dataType, 
+      ':scraperJobId' => $scraperJobId,
+      ':startedAt' => (new DateTime())->getTimestamp(),
     );
     if ($this->exec($this->insertUploaderSqlsrvJobSql, $args)) {
       return TRUE;
@@ -381,10 +393,10 @@ HERE;
     return NULL;
   }
 
-  public function selectLatestUploaderSqlsrvJob() {
+  public function selectLatestUploaderSqlsrvJob($dataType) {
     $this->setupStatements();
     if (!$this->selectUploaderSqlsrvJobSql) die('No SQL Prepared' . PHP_EOL);
-    $args = array();
+    $args = array(':dataType' => $dataType);
     if ($this->exec($this->selectUploaderSqlsrvJobSql, $args)) {
       return $this->selectUploaderSqlsrvJobSql->fetchObject();
     }

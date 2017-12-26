@@ -2,6 +2,13 @@
 namespace legtrack;
 
 class Enum {
+  static function getDataTypes() {
+    return (object)array(
+      'measures'  => 1,
+      'hearings'  => 2,
+    );
+  }
+
   static function getMeasureTypes() {
     return (object)array(
       'hb'  => 1,

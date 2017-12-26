@@ -72,6 +72,7 @@ if ($argc == 4) {
 $env = ($argc > 1) ?  $argv[1] : 'development';
 $year = ($argc > 2) ?  $argv[2] : date('Y');
 
+$dataTypes = Enum::getDataTypes();
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
 $pg = 'SCRAPE-AND-STORE ';
@@ -154,7 +155,7 @@ $programStart = new DateTime();
 
 $db = connectDb();
 
-$db->insertScraperJob();
+$db->insertScraperJob($dataTypes->measures);
 $jobId = $db->getLastInsertId();
 
 $totalNumber = 0;
