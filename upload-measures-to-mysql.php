@@ -81,7 +81,7 @@ $local->insertUploaderMysqlJob($scraperJobId, $dataTypes->measures);
 $jobId = $local->getLastInsertId();
 
 if ($scraperStartedAt > 0) {
-  $data = $local->selectUpdated($scraperStartedAt);
+  $data = $local->selectUpdatedMeasures($scraperStartedAt);
   $total = sizeof($data);
 
   if ($total > 0) {

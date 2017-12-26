@@ -35,7 +35,7 @@ $local = new LocalSqlite();
 $local->configure($GLOBALS);
 $local->connect();
 
-$updated = $local->selectUpdated($time);
+$updated = $local->selectUpdatedMeasures($time);
 
 $mysql = new RemoteMysql();
 $mysql->configure($GLOBALS);
