@@ -22,6 +22,9 @@ $db = new RemoteSqlsrv();
 $db->configure($GLOBALS);
 $db->connect();
 
+$db->query(RemoteSqlsrv::DROP_MEASURES_INDEX_SQL);
 $db->query(RemoteSqlsrv::DROP_MEASURES_TABLE_SQL);
+$db->query(RemoteSqlsrv::DROP_HEARINGS_INDEX_SQL);
+$db->query(RemoteSqlsrv::DROP_HEARINGS_TABLE_SQL);
 
 ?>

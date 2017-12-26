@@ -25,4 +25,7 @@ $db->connect();
 $db->query(RemoteMysql::CREATE_MEASURES_TABLE_SQL);
 $db->query(RemoteMysql::CREATE_MEASURES_INDEX_SQL);
 
+$db->query(RemoteMysql::CREATE_HEARINGS_TABLE_SQL);
+$db->query(RemoteMysql::CREATE_HEARINGS_INDEX_SQL);
+
 ?>

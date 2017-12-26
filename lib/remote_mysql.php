@@ -9,6 +9,26 @@ class RemoteMysql extends DbBase {
   private $host;
   private $dbname;
 
+  const CREATE_HEARINGS_TABLE_SQL = <<<HERE
+    CREATE TABLE IF NOT EXISTS hearings
+    (
+      year smallint NOT NULL,
+      measureType char(4) NOT NULL,
+      measureNumber smallint NOT NULL,
+      measureRelativeUrl varchar(512),
+      code varchar(64),
+      committee varchar(256),
+      lastUpdated int unsigned,
+      timestamp int unsigned,
+      datetime varchar(32),
+      description varchar(512),
+      room varchar(32),
+      notice varchar(256),
+      noticeUrl varchar(512),
+      noticePdfUrl varchar(512)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+HERE;
+
   const CREATE_MEASURES_TABLE_SQL = <<<HERE
     CREATE TABLE IF NOT EXISTS measures
     (

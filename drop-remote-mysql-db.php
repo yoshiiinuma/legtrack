@@ -22,6 +22,9 @@ $db = new RemoteMysql();
 $db->configure($GLOBALS);
 $db->connect();
 
+$db->query(RemoteMysql::DROP_MEASURES_INDEX_SQL);
 $db->query(RemoteMysql::DROP_MEASURES_TABLE_SQL);
+$db->query(RemoteMysql::DROP_HEARINGS_INDEX_SQL);
+$db->query(RemoteMysql::DROP_HEARINGS_TABLE_SQL);
 
 ?>

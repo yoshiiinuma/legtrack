@@ -9,7 +9,32 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
-//  const DROP_MEASURES_TABLE_SQL = "DROP TABLE IF EXISTS measures;";
+  const DROP_HEARINGS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='hearings' AND xtype='U')
+      DROP TABLE hearings
+HERE;
+
+
+  const CREATE_HEARINGS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='hearings' AND xtype='U')
+      CREATE TABLE hearings
+      (
+        year smallint NOT NULL,
+        measureType nchar(4) NOT NULL,
+        measureNumber smallint NOT NULL,
+        measureRelativeUrl nvarchar(512),
+        code nvarchar(64),
+        committee nvarchar(256),
+        lastUpdated int,
+        timestamp int,
+        datetime nvarchar(32),
+        description nvarchar(512),
+        room nvarchar(32),
+        notice nvarchar(256),
+        noticeUrl nvarchar(512),
+        noticePdfUrl nvarchar(512)
+      )
+HERE;
 
   const DROP_MEASURES_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='measures' AND xtype='U')

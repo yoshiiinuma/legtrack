@@ -26,4 +26,7 @@ $db->connect();
 $db->query(RemoteSqlsrv::CREATE_MEASURES_TABLE_SQL);
 $db->query(RemoteSqlsrv::CREATE_MEASURES_INDEX_SQL);
 
+$db->query(RemoteSqlsrv::CREATE_HEARINGS_TABLE_SQL);
+$db->query(RemoteSqlsrv::CREATE_HEARINGS_INDEX_SQL);
+
 ?>
