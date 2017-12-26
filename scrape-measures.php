@@ -33,7 +33,7 @@
  *
  * UASGE:
  *
- *   php scrape-and-store.php [env] [year] [debug]
+ *   php scrape-measures.php [env] [year] [debug]
  *
  *      env: production | development | test (default development)
  *           need configuration under config for the selected env
@@ -55,7 +55,7 @@ function usage($argv) {
   echo "Wrong parameters were given:\n\n";
   print_r($argv);
   echo "\n";
-  echo "UASGE: php scrape-and-store.php [env] [year] [debug]\n\n";
+  echo "UASGE: php scrape-measures.php [env] [year] [debug]\n\n";
 }
 
 $dbg = FALSE;
@@ -75,7 +75,7 @@ $year = ($argc > 2) ?  $argv[2] : date('Y');
 $dataTypes = Enum::getDataTypes();
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
-$pg = 'SCRAPE-AND-STORE ';
+$pg = 'SCRAPE-MEASURES ';
 
 loadEnv($env);
 
