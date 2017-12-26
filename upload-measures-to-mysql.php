@@ -10,7 +10,7 @@ require_once 'lib/remote_mysql.php';
 require_once 'lib/logger.php';
 
 function usage($argv) {
-  echo "\nUASGE: php create-remote-mysql.php <env>\n\n";
+  echo "\nUASGE: php upload-measures-to-mysql.php <env>\n\n";
   echo "  env: development|test|production\n";
 }
 

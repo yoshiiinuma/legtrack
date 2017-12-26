@@ -10,7 +10,7 @@ require_once 'lib/remote_sqlsrv.php';
 require_once 'lib/logger.php';
 
 function usage($argv) {
-  echo "\nUASGE: php create-remote-sqlsrv.php <env>\n\n";
+  echo "\nUASGE: php upload-measures-to-sqlsrv.php <env>\n\n";
   echo "  env: development|test|production\n";
 }
 
