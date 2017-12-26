@@ -18,6 +18,7 @@ namespace legtrack;
 use \DateTime;
 
 require_once 'lib/functions.php';
+require_once 'lib/enum.php';
 require_once 'lib/curl.php';
 require_once 'lib/hearing_parser.php';
 require_once 'lib/local_sqlite.php';
@@ -43,6 +44,8 @@ if ($argc == 3) {
 
 $env = ($argc > 1) ?  $argv[1] : 'development';
 
+$dataTypes = Enum::getDataTypes();
+$jobStatus = Enum::getJobStatus();
 $pg = 'SCRAPE-HEARINGS ';
 
 loadEnv($env);
@@ -127,23 +130,31 @@ $programStart = new DateTime();
 
 $db = connectDb();
 
+$db->insertScraperJob($dataTypes->hearings);
+$jobId = $db->getLastInsertId();
+
+$totalNumber = 0;
+$updatedNumber = 0;
+$updated = FALSE;
+
 $scrapeRslt = checkUpcomingHearingsUpdate($dbg);
 
 Logger::logger()->info($pg . "HTML : " . $scrapeRslt->status . " => " . $scrapeRslt->dst . ' ' . $scrapeRslt->elapsed);
 
 if ($scrapeRslt->status == 'UPDATED') {
-  //$db->insertScraperJob();
-  //$jobId = $db->getLastInsertId();
-
   $dbRslt = updateLocalDb($db, $scrapeRslt);
+  $totalNumber = $dbRslt->totalNumber;
+  $updatedNumber = $dbRslt->updatedNumber;
+  if ($dbRslt->updated) $updated = TRUE;
   Logger::logger()->info($pg . 'UPDATED ' . $dbRslt->updatedNumber . '/' . $dbRslt->totalNumber . " Rows " . $dbRslt->elapsed);
-
-
+} else {
+  Logger::logger()->info($pg . 'SKIPPED');
 }
 
-//$db->updateScraperJob($jobId, $jobStatus->completed, $totalNumber, $updatedNumber, $updated);
+$db->updateScraperJob($jobId, $jobStatus->completed, $totalNumber, $updatedNumber, $updated);
 closeDb($db);
 
+Logger::logger()->info($pg . $updatedNumber . '/' . $totalNumber . ' Rows Updated');
 Logger::logger()->info($pg . 'COMPLETED! '. elapsedTime($programStart));
 Logger::close();
 
