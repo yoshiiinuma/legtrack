@@ -3,7 +3,7 @@
 namespace legtrack;
 
 require_once 'lib/functions.php';
-require_once 'lib/local_measure.php';
+require_once 'lib/local_sqlite.php';
 require_once 'lib/measure_parser.php';
 
 /**
@@ -67,7 +67,7 @@ $parser = new MeasureParser();
 //$parser->startParsingFile($file);
 $parser->start(file_get_contents($file));
 
-$db = new LocalMeasure();
+$db = new LocalSqlite();
 $db->configure($GLOBALS);
 $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
 

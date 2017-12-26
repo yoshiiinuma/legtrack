@@ -20,7 +20,7 @@ use \DateTime;
 require_once 'lib/functions.php';
 require_once 'lib/curl.php';
 require_once 'lib/hearing_parser.php';
-require_once 'lib/local_measure.php';
+require_once 'lib/local_sqlite.php';
 require_once 'lib/logger.php';
 
 function usage($argv) {
@@ -52,7 +52,7 @@ Logger::logger()->setLogLevel(Logger::INFO);
 Logger::logger()->info($pg . 'STARTED ENV: ' . $env);
 
 function connectDb() {
-  $db = new LocalMeasure();
+  $db = new LocalSqlite();
   $db->configure($GLOBALS);
   $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
   return $db;

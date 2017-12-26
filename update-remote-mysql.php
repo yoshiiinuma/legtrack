@@ -2,7 +2,7 @@
 namespace legtrack;
 
 require_once 'lib/functions.php';
-require_once 'lib/local_measure.php';
+require_once 'lib/local_sqlite.php';
 require_once 'lib/remote_mysql.php';
 
 function usage($argv) {
@@ -31,7 +31,7 @@ if (!date_parse($time)) {
 $env = ($argc == 4) ? $argv[3] : 'development';
 loadEnv($env);
 
-$local = new LocalMeasure();
+$local = new LocalSqlite();
 $local->configure($GLOBALS);
 $local->connect();
 

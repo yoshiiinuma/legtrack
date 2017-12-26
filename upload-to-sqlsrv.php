@@ -5,7 +5,7 @@ use \DateTime;
 
 require_once 'lib/functions.php';
 require_once 'lib/enum.php';
-require_once 'lib/local_measure.php';
+require_once 'lib/local_sqlite.php';
 require_once 'lib/remote_sqlsrv.php';
 require_once 'lib/logger.php';
 
@@ -15,7 +15,7 @@ function usage($argv) {
 }
 
 function connectLocalDb() {
-  $db = new LocalMeasure();
+  $db = new LocalSqlite();
   $db->configure($GLOBALS);
   $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
   return $db;

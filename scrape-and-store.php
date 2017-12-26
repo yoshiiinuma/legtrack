@@ -48,7 +48,7 @@ require_once 'lib/functions.php';
 require_once 'lib/enum.php';
 require_once 'lib/curl.php';
 require_once 'lib/measure_parser.php';
-require_once 'lib/local_measure.php';
+require_once 'lib/local_sqlite.php';
 require_once 'lib/logger.php';
 
 function usage($argv) {
@@ -141,7 +141,7 @@ function updateLocalDb($db, $year, $type, $args) {
 }
 
 function connectDb() {
-  $db = new LocalMeasure();
+  $db = new LocalSqlite();
   $db->configure($GLOBALS);
   $db->connect() || die('Local DB Connection Failed' . PHP_EOL);
   return $db;

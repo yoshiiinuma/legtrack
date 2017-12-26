@@ -2,21 +2,21 @@
 namespace legtrack;
 
 require_once 'lib/functions.php';
-require_once 'lib/local_measure.php';
+require_once 'lib/local_sqlite.php';
 require_once 'lib/measure_parser.php';
 
 loadConfig('config/test.php');
 
 function setup($r) {
-  $r->db = new LocalMeasure();
+  $r->db = new LocalSqlite();
   $r->db->configure($GLOBALS);
   $r->db->connect();
-  $r->db->query(LocalMeasure::DROP_MEASURES_TABLE_SQL);
-  $r->db->query(LocalMeasure::CREATE_MEASURES_TABLE_SQL);
+  $r->db->query(LocalSqlite::DROP_MEASURES_TABLE_SQL);
+  $r->db->query(LocalSqlite::CREATE_MEASURES_TABLE_SQL);
 }
 
 function shutdown($r) {
-  //$r->db->query(LocalMeasure::DROP_MEASURES_TABLE_SQL);
+  //$r->db->query(LocalSqlite::DROP_MEASURES_TABLE_SQL);
   $r->db->close();
 }
 

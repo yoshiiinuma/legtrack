@@ -5,7 +5,7 @@ use \DateTime;
 
 require_once 'lib/db_base.php';
 
-class LocalMeasure extends DbBase {
+class LocalSqlite extends DbBase {
   private $path;
 
   protected $insertScraperJobSql;
