@@ -42,7 +42,7 @@ $env = ($argc == 2) ? $argv[1]: 'development';
 $dataTypes = Enum::getDataTypes();
 $measureTypes = Enum::getMeasureTypes();
 $jobStatus = Enum::getJobStatus();
-$pg = 'UPLOAD-TO-MYSQL ';
+$pg = 'UPLOAD-MEASURES-TO-MYSQL ';
 
 loadEnv($env);
 
