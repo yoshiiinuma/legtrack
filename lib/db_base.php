@@ -15,6 +15,7 @@ class DbBase {
   protected $upsertMeasureSql;
   protected $selectMeasureSql;
   protected $selectUpdatedMeasuresSql;
+  protected $selectUpdatedHearingsSql;
   protected $insertHearingSql;
 
   const DROP_HEARINGS_TABLE_SQL = "DROP TABLE IF EXISTS hearings;";
@@ -88,7 +89,7 @@ HERE;
 
   const SELECT_UPDATED_MEASURES_SQL = <<<HERE
      SELECT * FROM measures
-      WHERE lastUpdated > :lastUpdated;
+      WHERE lastUpdated >= :lastUpdated;
 HERE;
 
   const UPDATE_MEASURE_SQL = <<<HERE
@@ -128,6 +129,11 @@ HERE;
         :measureType, :year, :measureNumber, :lastUpdated, :code, :measurePdfUrl,
         :measureArchiveUrl, :measureTitle, :reportTitle, :bitAppropriation,
         :description, :status, :introducer, :currentReferral, :companion)
+HERE;
+
+  const SELECT_UPDATED_HEARINGS_SQL = <<<HERE
+     SELECT * FROM hearings
+      WHERE lastUpdated >= :lastUpdated;
 HERE;
 
   const INSERT_HEARING_SQL = <<<HERE
@@ -268,6 +274,8 @@ HERE;
       if (!$this->selectMeasureSql) { die('SELECT Measure SQL Preparation Failed' . PHP_EOL); }
       $this->selectUpdatedMeasuresSql = $this->prepare(static::SELECT_UPDATED_MEASURES_SQL);
       if (!$this->selectUpdatedMeasuresSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
+      $this->selectUpdatedHearingsSql = $this->prepare(static::SELECT_UPDATED_HEARINGS_SQL);
+      if (!$this->selectUpdatedHearingsSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
       $this->insertHearingSql = $this->prepare(static::INSERT_HEARING_SQL);
       if (!$this->insertHearingSql) { die('INSERT Hearing SQL Preparation Failed' . PHP_EOL); }
       $this->ready = TRUE;
@@ -419,6 +427,20 @@ HERE;
     }
     $this->error = $this->insertMeasureSql->errorInfo();
     Logger::logger()->error('INSERT MEASURE: ', $this->error);
+    return NULL;
+  }
+
+  public function selectUpdatedHearings($time) {
+    $this->setupStatements();
+    if (!$this->selectUpdatedHearingsSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':lastUpdated' => $time,
+    );
+    if ($this->exec($this->selectUpdatedHearingsSql, $args)) {
+      return $this->selectUpdatedHearingsSql->fetchAll(PDO::FETCH_OBJ);
+    }
+    $this->error = $this->selectUpdatedHearingsSql->errorInfo();
+    Logger::logger()->error('SELECT UPDATED: ', $this->error);
     return NULL;
   }
 
