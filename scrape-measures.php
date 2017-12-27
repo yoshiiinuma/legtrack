@@ -85,12 +85,9 @@ Logger::logger()->info($pg . 'STARTED ENV: ' . $env . ', YEAR: ' . $year);
 
 function checkCapitolSiteUpdate($year, $type, $dbg) {
   $start = new DateTime();
-  global $pg;
 
   $data = NULL;
   $status = 'MATCHED';
-  $target = $year . ' ' . $type;
-  if (strlen($target) == 7) $target .= ' ';
 
   $curl = new Curl();
   $curl->debug = $dbg;
@@ -107,15 +104,13 @@ function checkCapitolSiteUpdate($year, $type, $dbg) {
     $data = $curl->getResult();
   } 
 
-  Logger::logger()->info($pg . $target . " : " . $status . " => " . $dst . ' ' . elapsedTime($start));
-
   return (object)array('status' => $status, 'data' => $data,
-    'oldMd5' => $curMd5, 'newMd5' => $newMd5);
+    'oldMd5' => $curMd5, 'newMd5' => $newMd5, 'dst' => $dst,
+    'elapsed' => elapsedTime($start));
 }
 
 function updateLocalDb($db, $year, $type, $args) {
   $start = new DateTime();
-  global $pg;
 
   $parser = new MeasureParser();
   $parser->start($args->data);
@@ -131,13 +126,13 @@ function updateLocalDb($db, $year, $type, $args) {
   $db->commit();
 
   $updatedNumber = $db->getRowAffected();
-  $updated = ($updatedNumber > 0) ? TRUE : FALSE; 
-  Logger::logger()->info($pg . $year . ' ' . $type . ' UPDATED ' . $updatedNumber . '/' . $cnt . " Rows " . elapsedTime($start));
 
   return (object)array(
     'totalNumber' => $cnt,
     'updatedNumber' => $updatedNumber,
-    'updated' => $updated);
+    'updated' => ($updatedNumber > 0) ? TRUE : FALSE,
+    'elapsed' => elapsedTime($start)
+  );
 }
 
 function connectDb() {
@@ -166,9 +161,11 @@ foreach ($measureTypes as $type => $val) {
   $startedAt = new DateTime();
 
   $scrapeRslt = checkCapitolSiteUpdate($year, $type, $dbg);
+  Logger::logger()->info($pg . $year . ' ' . $type . " : " . $scrapeRslt->status . " => " . $scrapeRslt->dst . ' ' . $scrapeRslt->elapsed);
 
   if ($scrapeRslt->status == 'UPDATED') {
     $dbRslt = updateLocalDb($db, $year, $type, $scrapeRslt);
+    Logger::logger()->info($pg . $year . ' ' . $type . ' UPDATED ' . $dbRslt->updatedNumber . '/' . $dbRslt->totalNumber . " Rows " . $dbRslt->elapsed);
     $totalNumber += $dbRslt->totalNumber;
     $updatedNumber += $dbRslt->updatedNumber;
     if ($dbRslt->updated) $updated = TRUE;

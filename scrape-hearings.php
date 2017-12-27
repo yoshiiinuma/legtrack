@@ -116,12 +116,11 @@ function updateLocalDb($db, $args) {
   $db->commit();
 
   $updatedNumber = $db->getRowAffected();
-  $updated = ($updatedNumber > 0) ? TRUE : FALSE; 
 
   return (object)array(
     'totalNumber' => $cnt,
     'updatedNumber' => $updatedNumber,
-    'updated' => $updated,
+    'updated' => ($updatedNumber > 0) ? TRUE : FALSE,
     'elapsed' => elapsedTime($start)
   );
 }
