@@ -30,9 +30,10 @@ HERE;
         datetime nvarchar(32),
         description nvarchar(512),
         room nvarchar(32),
-        notice nvarchar(256),
+        notice nvarchar(128),
         noticeUrl nvarchar(512),
-        noticePdfUrl nvarchar(512)
+        noticePdfUrl nvarchar(512),
+        UNIQUE (notice)
       )
 HERE;
 
@@ -94,6 +95,34 @@ HERE;
         :description, :status, :introducer, :currentReferral, :companion)
 HERE;
 
+  const UPSERT_HEARING_SQL = <<<HERE
+    IF EXISTS (SELECT 1 FROM hearings WHERE notice = :notice1)
+      UPDATE hearings
+        SET year = :year2,
+            measureType = :measureType2,
+            measureNumber = :measureNumber2,
+            measureRelativeUrl = :measureRelativeUrl2,
+            code = :code2,
+            committee = :committee2,
+            lastUpdated = :lastUpdated2,
+            timestamp = :timestamp2,
+            datetime = :datetime2,
+            description = :description2,
+            room = :room2,
+            notice = :notice2,
+            noticeUrl = :noticeUrl2,
+        WHERE notice = :notice2
+    ELSE
+     INSERT INTO hearings (
+        year, measureType, measureNumber, measureRelativeUrl, code,
+        committee, lastUpdated, timestamp, datetime, description,
+        room, notice, noticeUrl, noticePdfUrl)
+     VALUES (
+        :year, :measureType, :measureNumber, :measureRelativeUrl, :code,
+        :committee, :lastUpdated, :timestamp, :datetime, :description,
+        :room, :notice, :noticeUrl, :noticePdfUrl)
+HERE;
+
   public function configure($conf) {
     $this->user = $conf['SQLSRV_USER'];
     $this->pass = $conf['SQLSRV_PASS'];
@@ -110,9 +139,9 @@ HERE;
     return $this->dsn;
   }
 
-  protected function createUpsertArgs($year, $type, $r) {
+  protected function createUpsertMeasureArgs($year, $type, $r) {
     return array_merge(
-      parent::createUpsertArgs($year, $type, $r),
+      parent::createUpsertMeasureArgs($year, $type, $r),
       array(
         ':measureType1' => $type,
         ':year1' => $year,
@@ -135,6 +164,31 @@ HERE;
       )
     );
   }
+
+  protected function createUpsertHearingArgs($r) {
+    return array_merge(
+      parent::createUpsertHearingArgs($r),
+      array(
+        ':notice1' => $r->notice,
+        ':year2' => $r->year,
+        ':measureType2' => $r->measureType,
+        ':measureNumber2' => $r->measureNumber,
+        ':measureRelativeUrl2' => $r->measureRelativeUrl,
+        ':code2' => $r->code,
+        ':committee2' => $r->committee,
+        ':lastUpdated2' => (new DateTime())->getTimestamp(),
+        ':timestamp2' => $r->timestamp,
+        ':datetime2' => $r->datetime,
+        ':description2' => $r->description,
+        ':room2' => $r->room,
+        ':description2' => $r->description,
+        ':notice2' => $r->notice,
+        ':noticeUrl2' => $r->noticeUrl,
+        ':noticePdfUrl2' => $r->noticePdfUrl,
+      )
+    );
+  }
+
 }
 
 ?>

@@ -23,9 +23,10 @@ class RemoteMysql extends DbBase {
       datetime varchar(32),
       description varchar(512),
       room varchar(32),
-      notice varchar(256),
+      notice varchar(128),
       noticeUrl varchar(512),
-      noticePdfUrl varchar(512)
+      noticePdfUrl varchar(512),
+      UNIQUE (notice)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 HERE;
 
@@ -82,6 +83,33 @@ HERE;
       ;
 HERE;
 
+  const UPSERT_HEARING_SQL = <<<HERE
+     INSERT INTO hearings (
+        year, measureType, measureNumber, measureRelativeUrl, code,
+        committee, lastUpdated, timestamp, datetime, description,
+        room, notice, noticeUrl, noticePdfUrl)
+     VALUES (
+        :year, :measureType, :measureNumber, :measureRelativeUrl, :code,
+        :committee, :lastUpdated, :timestamp, :datetime, :description,
+        :room, :notice, :noticeUrl, :noticePdfUrl)
+     ON DUPLICATE KEY UPDATE
+        year = :year2,
+        measureType = :measureType2,
+        measureNumber = :measureNumber2,
+        measureRelativeUrl = :measureRelativeUrl2,
+        code = :code2,
+        committee = :committee2,
+        lastUpdated = :lastUpdated2,
+        timestamp = :timestamp2,
+        datetime = :datetime2,
+        description = :description2,
+        room = :room2,
+        noticeUrl = :noticeUrl2,
+        noticePdfUrl = :noticePdfUrl2
+      ;
+HERE;
+
+
   public function configure($conf) {
     $this->user = $conf['MYSQL_USER'];
     $this->pass = $conf['MYSQL_PASS'];
@@ -98,9 +126,9 @@ HERE;
     return "mysql:host=" . $this->host . ';dbname=' . $this->dbname;
   }
 
-  protected function createUpsertArgs($year, $type, $r) {
+  protected function createUpsertMeasureArgs($year, $type, $r) {
     return array_merge(
-      parent::createUpsertArgs($year, $type, $r),
+      parent::createUpsertMeasureArgs($year, $type, $r),
       array(
         ':lastUpdated2' => (new DateTime())->getTimestamp(),
         ':code2' => $r->code  ,
@@ -114,6 +142,28 @@ HERE;
         ':introducer2' => $r->introducer,
         ':currentReferral2' => $r->currentReferral,
         ':companion2' => $r->companion,
+      )
+    );
+  }
+
+  protected function createUpsertHearingArgs($r) {
+    return array_merge(
+      parent::createUpsertHearingArgs($r),
+      array(
+        ':year2' => $r->year,
+        ':measureType2' => $r->measureType,
+        ':measureNumber2' => $r->measureNumber,
+        ':measureRelativeUrl2' => $r->measureRelativeUrl,
+        ':code2' => $r->code,
+        ':committee2' => $r->committee,
+        ':lastUpdated2' => (new DateTime())->getTimestamp(),
+        ':timestamp2' => $r->timestamp,
+        ':datetime2' => $r->datetime,
+        ':description2' => $r->description,
+        ':room2' => $r->room,
+        ':description2' => $r->description,
+        ':noticeUrl2' => $r->noticeUrl,
+        ':noticePdfUrl2' => $r->noticePdfUrl,
       )
     );
   }

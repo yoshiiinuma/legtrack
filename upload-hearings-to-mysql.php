@@ -86,7 +86,8 @@ if ($scraperStartedAt > 0) {
   if ($total > 0) {
     $remote = connectMysql();
     foreach($data as $r) {
-      $remote->insertHearing($r);
+      //$remote->insertHearing($r);
+      $remote->upsertHearing($r);
     }
     $updated = $remote->getRowAffected();
     $remote->close();

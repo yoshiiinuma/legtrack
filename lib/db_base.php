@@ -17,6 +17,7 @@ class DbBase {
   protected $selectUpdatedMeasuresSql;
   protected $selectUpdatedHearingsSql;
   protected $insertHearingSql;
+  protected $upsertHearingSql;
 
   const DROP_HEARINGS_TABLE_SQL = "DROP TABLE IF EXISTS hearings;";
 
@@ -34,9 +35,10 @@ class DbBase {
       datetime nvarchar(32),
       description nvarchar(512),
       room nvarchar(32),
-      notice nvarchar(256),
+      notice nvarchar(128),
       noticeUrl nvarchar(512),
-      noticePdfUrl nvarchar(512)
+      noticePdfUrl nvarchar(512),
+      UNIQUE (notice)
     );
 HERE;
 
@@ -147,6 +149,18 @@ HERE;
         :room, :notice, :noticeUrl, :noticePdfUrl)
 HERE;
 
+  const UPSERT_HEARING_SQL = <<<HERE
+     INSERT OR REPLACE INTO hearings (
+        year, measureType, measureNumber, measureRelativeUrl, code,
+        committee, lastUpdated, timestamp, datetime, description,
+        room, notice, noticeUrl, noticePdfUrl)
+     VALUES (
+        :year, :measureType, :measureNumber, :measureRelativeUrl, :code,
+        :committee, :lastUpdated, :timestamp, :datetime, :description,
+        :room, :notice, :noticeUrl, :noticePdfUrl)
+HERE;
+
+
   public function __construct() {
     $this->ready = FALSE;
     $this->rowAffected = 0;
@@ -210,8 +224,12 @@ HERE;
     );
   }
 
+  protected function createUpsertHearingArgs($r) {
+    return $this->createInsertHearingArgs($r);
+  }
+
   //Override if necessary
-  protected function createUpsertArgs($year, $type, $r) {
+  protected function createUpsertMeasureArgs($year, $type, $r) {
     return $this->createSqlArgs($year, $type, $r);
   }
 
@@ -278,6 +296,8 @@ HERE;
       if (!$this->selectUpdatedHearingsSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
       $this->insertHearingSql = $this->prepare(static::INSERT_HEARING_SQL);
       if (!$this->insertHearingSql) { die('INSERT Hearing SQL Preparation Failed' . PHP_EOL); }
+      $this->upsertHearingSql = $this->prepare(static::UPSERT_HEARING_SQL);
+      if (!$this->upsertHearingSql) { die('UPSERT Hearing SQL Preparation Failed' . PHP_EOL); }
       $this->ready = TRUE;
     }
   }
@@ -394,7 +414,7 @@ HERE;
   public function upsertMeasure($r) {
     $this->setupStatements();
     if (!$this->upsertMeasureSql) die('No SQL Prepared' . PHP_EOL);
-    $args = $this->createUpsertArgs($r->year, $r->measureType, $r);
+    $args = $this->createUpsertMeasureArgs($r->year, $r->measureType, $r);
     if ($this->exec($this->upsertMeasureSql, $args)) {
       $this->rowAffected += $this->upsertMeasureSql->rowCount();
       return TRUE;
@@ -457,6 +477,19 @@ HERE;
     return NULL;
   }
 
+  public function upsertHearing($r) {
+    $this->setupStatements();
+    if (!$this->upsertHearingSql) die('No SQL Prepared' . PHP_EOL);
+    $args = $this->createUpsertHearingArgs($r);
+    if ($this->exec($this->upsertHearingSql, $args)) {
+      $this->rowAffected += $this->upsertHearingSql->rowCount();
+      return TRUE;
+    }
+    $this->error = $this->upsertHearingSql->errorInfo();
+    Logger::logger()->error('INSERT HEARING: ', $this->error);
+    return NULL;
+  }
+
   public function getRowAffected() {
     $cnt = $this->rowAffected;
     $this->rowAffected = 0;
@@ -500,6 +533,8 @@ HERE;
     if (!$sql) die('No SQL Prepared' . PHP_EOL);
     $this->error = NULL;
 
+    print_r($sql);
+    print_r($args);
     try {
       $sql->execute($args);
       return true;

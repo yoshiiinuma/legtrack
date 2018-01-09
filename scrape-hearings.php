@@ -111,7 +111,8 @@ function updateLocalDb($db, $args) {
     print_r($cur);
     print PHP_EOL;
 
-    $db->insertHearing($cur);
+    //$db->insertHearing($cur);
+    $db->upsertHearing($cur);
   }
   $db->commit();
 
