@@ -109,8 +109,8 @@ HERE;
             datetime = :datetime2,
             description = :description2,
             room = :room2,
-            notice = :notice2,
             noticeUrl = :noticeUrl2,
+            noticePdfUrl = :noticePdfUrl2
         WHERE notice = :notice2
     ELSE
      INSERT INTO hearings (
