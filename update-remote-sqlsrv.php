@@ -27,6 +27,7 @@ if (!date_parse($time)) {
   usage($argv);
   exit();
 }
+$time = strtotime($time);
 
 $env = ($argc == 4) ? $argv[3] : 'development';
 loadEnv($env);
