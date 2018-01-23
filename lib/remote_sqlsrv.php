@@ -33,7 +33,7 @@ HERE;
         notice nvarchar(128),
         noticeUrl nvarchar(512),
         noticePdfUrl nvarchar(512),
-        UNIQUE (notice)
+        UNIQUE (measureType, measureNumber, notice)
       )
 HERE;
 

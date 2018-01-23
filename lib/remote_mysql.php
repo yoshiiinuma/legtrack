@@ -26,7 +26,7 @@ class RemoteMysql extends DbBase {
       notice varchar(128),
       noticeUrl varchar(512),
       noticePdfUrl varchar(512),
-      UNIQUE (notice)
+      UNIQUE (measureType, measureNumber, notice)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 HERE;
 
