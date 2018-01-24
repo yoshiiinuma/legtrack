@@ -111,7 +111,6 @@ HERE;
         WHERE year = :year2
           AND measureType = :measureType2
           AND measureNumber = :measureNumber2
-          AND measureRelativeUrl = :measureRelativeUrl2
           AND notice = :notice2
     ELSE
       INSERT INTO hearings (
