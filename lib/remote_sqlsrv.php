@@ -96,12 +96,9 @@ HERE;
 HERE;
 
   const UPSERT_HEARING_SQL = <<<HERE
-    IF EXISTS (SELECT 1 FROM hearings WHERE notice = :notice1)
+    IF EXISTS (SELECT 1 FROM hearings WHERE year = :year1 AND measureType = :measureType1 AND measureNumber = :measureNumber1 AND notice = :notice1)
       UPDATE hearings
-        SET year = :year2,
-            measureType = :measureType2,
-            measureNumber = :measureNumber2,
-            measureRelativeUrl = :measureRelativeUrl2,
+        SET measureRelativeUrl = :measureRelativeUrl2,
             code = :code2,
             committee = :committee2,
             lastUpdated = :lastUpdated2,
@@ -111,7 +108,11 @@ HERE;
             room = :room2,
             noticeUrl = :noticeUrl2,
             noticePdfUrl = :noticePdfUrl2
-        WHERE notice = :notice2
+      WHERE year = :year2
+        AND measureType = :measureType2
+        AND measureNumber = :measureNumber2
+        AND measureRelativeUrl = :measureRelativeUrl2
+        AND notice = :notice2
     ELSE
      INSERT INTO hearings (
         year, measureType, measureNumber, measureRelativeUrl, code,
@@ -169,6 +170,9 @@ HERE;
     return array_merge(
       parent::createUpsertHearingArgs($r),
       array(
+        ':year1' => $r->year,
+        ':measureType1' => $r->measureType,
+        ':measureNumber1' => $r->measureNumber,
         ':notice1' => $r->notice,
         ':year2' => $r->year,
         ':measureType2' => $r->measureType,
