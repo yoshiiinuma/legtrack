@@ -16,6 +16,7 @@ class DbBase {
   protected $selectMeasureSql;
   protected $selectUpdatedMeasuresSql;
   protected $selectUpdatedHearingsSql;
+  protected $selectMeasuresByTimeSql;
   protected $insertHearingSql;
   protected $upsertHearingSql;
 
@@ -92,6 +93,12 @@ HERE;
   const SELECT_UPDATED_MEASURES_SQL = <<<HERE
      SELECT * FROM measures
       WHERE lastUpdated >= :lastUpdated;
+HERE;
+
+  const SELECT_MEASURES_BY_TIME_SQL = <<<HERE
+     SELECT * FROM measures
+      WHERE lastUpdated >= :startTime
+        AND lastUpdated <= :endTime;
 HERE;
 
   const UPDATE_MEASURE_SQL = <<<HERE
@@ -291,6 +298,8 @@ HERE;
       if (!$this->selectMeasureSql) { die('SELECT Measure SQL Preparation Failed' . PHP_EOL); }
       $this->selectUpdatedMeasuresSql = $this->prepare(static::SELECT_UPDATED_MEASURES_SQL);
       if (!$this->selectUpdatedMeasuresSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
+      $this->selectMeasuresByTimeSql = $this->prepare(static::SELECT_MEASURES_BY_TIME_SQL);
+      if (!$this->selectMeasuresByTimeSql) { die('SELECT ByTime SQL Preparation Failed' . PHP_EOL); }
       $this->selectUpdatedHearingsSql = $this->prepare(static::SELECT_UPDATED_HEARINGS_SQL);
       if (!$this->selectUpdatedHearingsSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
       $this->insertHearingSql = $this->prepare(static::INSERT_HEARING_SQL);
@@ -377,6 +386,21 @@ HERE;
       return $this->selectUpdatedMeasuresSql->fetchAll(PDO::FETCH_OBJ);
     }
     $this->error = $this->selectUpdatedMeasuresSql->errorInfo();
+    Logger::logger()->error('SELECT UPDATED: ', $this->error);
+    return NULL;
+  }
+
+  public function selectMeasuresByTime($startTime, $endTime) {
+    $this->setupStatements();
+    if (!$this->selectMeasuresByTimeSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':startTime' => $startTime,
+        ':endTime' => $endTime,
+    );
+    if ($this->exec($this->selectMeasuresByTimeSql, $args)) {
+      return $this->selectMeasuresByTimeSql->fetchAll(PDO::FETCH_OBJ);
+    }
+    $this->error = $this->selectMeasuresByTimeSql->errorInfo();
     Logger::logger()->error('SELECT UPDATED: ', $this->error);
     return NULL;
   }
