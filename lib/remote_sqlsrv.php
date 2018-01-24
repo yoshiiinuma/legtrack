@@ -108,20 +108,20 @@ HERE;
             room = :room2,
             noticeUrl = :noticeUrl2,
             noticePdfUrl = :noticePdfUrl2
-      WHERE year = :year2
-        AND measureType = :measureType2
-        AND measureNumber = :measureNumber2
-        AND measureRelativeUrl = :measureRelativeUrl2
-        AND notice = :notice2
+        WHERE year = :year2
+          AND measureType = :measureType2
+          AND measureNumber = :measureNumber2
+          AND measureRelativeUrl = :measureRelativeUrl2
+          AND notice = :notice2
     ELSE
-     INSERT INTO hearings (
-        year, measureType, measureNumber, measureRelativeUrl, code,
-        committee, lastUpdated, timestamp, datetime, description,
-        room, notice, noticeUrl, noticePdfUrl)
-     VALUES (
-        :year, :measureType, :measureNumber, :measureRelativeUrl, :code,
-        :committee, :lastUpdated, :timestamp, :datetime, :description,
-        :room, :notice, :noticeUrl, :noticePdfUrl)
+      INSERT INTO hearings (
+         year, measureType, measureNumber, measureRelativeUrl, code,
+         committee, lastUpdated, timestamp, datetime, description,
+         room, notice, noticeUrl, noticePdfUrl)
+      VALUES (
+         :year, :measureType, :measureNumber, :measureRelativeUrl, :code,
+         :committee, :lastUpdated, :timestamp, :datetime, :description,
+         :room, :notice, :noticeUrl, :noticePdfUrl)
 HERE;
 
   public function configure($conf) {
