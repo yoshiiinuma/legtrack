@@ -185,7 +185,6 @@ HERE;
         ':datetime2' => $r->datetime,
         ':description2' => $r->description,
         ':room2' => $r->room,
-        ':description2' => $r->description,
         ':notice2' => $r->notice,
         ':noticeUrl2' => $r->noticeUrl,
         ':noticePdfUrl2' => $r->noticePdfUrl,
