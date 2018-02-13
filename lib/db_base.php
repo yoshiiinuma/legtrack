@@ -87,6 +87,10 @@ HERE;
      SELECT * FROM measures;
 HERE;
 
+  const SELECT_TOP100_MEASURES_SQL = <<<HERE
+     SELECT * FROM measures LIMIT 100;
+HERE;
+
   const SELECT_MEASURE_SQL = <<<HERE
      SELECT * FROM measures
       WHERE year = :year

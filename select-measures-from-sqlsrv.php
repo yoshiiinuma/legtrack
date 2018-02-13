@@ -9,7 +9,7 @@ require_once 'lib/remote_sqlsrv.php';
 require_once 'lib/logger.php';
 
 function usage($argv) {
-  echo "\nUASGE: php select-measures-from-sqlsrv.php <env>\n\n";
+  echo "\nUASGE: php select-measures-from-sqlsrv.php <env> [ALL]\n\n";
   echo "  env: development|test|production\n";
 }
 
@@ -20,12 +20,20 @@ function connectSqlsrv() {
   return $db;
 }
 
-if ($argc < 1 || $argc > 2) {
+if ($argc < 1 || $argc > 3) {
   usage($argv);
   exit();
 }
 
-$env = ($argc == 2) ? $argv[1]: 'development';
+$env = ($argc > 1) ? $argv[1]: 'development';
+$all = false;
+if ($argc > 2) {
+  if ($argv[2] != 'ALL') {
+    usage($argv);
+    exit();
+  }
+  $all = true;
+}
 
 $dataTypes = Enum::getDataTypes();
 $measureTypes = Enum::getMeasureTypes();
@@ -44,8 +52,10 @@ Logger::logger()->info($pg . 'STARTED ENV: ' . $env);
 $total = 0;
 $selected = 0;
 
+$sql = ($all) ? RemoteSqlsrv::SELECT_ALL_MEASURES_SQL : RemoteSqlsrv::SELECT_TOP100_MEASURES_SQL; 
+
 $remote = connectSqlsrv();
-$stmt = $remote->prepare(RemoteSqlsrv::SELECT_ALL_MEASURES_SQL, (object)[]);
+$stmt = $remote->prepare($sql, []);
 
 if (!$stmt->execute()) {
   die("Cannot execute the SQL");
@@ -53,6 +63,9 @@ if (!$stmt->execute()) {
 
 $data = $stmt->fetchAll();
 $total = sizeof($data);
+if (!$all) {
+  foreach($data as $r) { print_r($r); }
+}
 $remote->close();
 
 echo($pg . ' ' . $total . ' Rows Selected' . PHP_EOL);

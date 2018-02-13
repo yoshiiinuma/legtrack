@@ -123,6 +123,10 @@ HERE;
          :room, :notice, :noticeUrl, :noticePdfUrl)
 HERE;
 
+  const SELECT_TOP100_MEASURES_SQL = <<<HERE
+     SELECT TOP 100 * FROM measures;
+HERE;
+
   public function configure($conf) {
     $this->user = $conf['SQLSRV_USER'];
     $this->pass = $conf['SQLSRV_PASS'];
