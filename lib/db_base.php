@@ -83,6 +83,10 @@ HERE;
     DROP INDEX measures_lastupdated_idx ON measures;
 HERE;
 
+  const SELECT_ALL_MEASURES_SQL = <<<HERE
+     SELECT * FROM measures;
+HERE;
+
   const SELECT_MEASURE_SQL = <<<HERE
      SELECT * FROM measures
       WHERE year = :year
@@ -529,9 +533,9 @@ HERE;
     $args = array();
     if ($this->exec($sql, $args)) {
       $r = $sql->fetch(PDO::FETCH_ASSOC);
-      return $r['count(*)'];
+      return $r[array_keys($r)[0]];
     }
-    $this->error = $this->updateMeasureSql->errorInfo();
+    $this->error = $sql->errorInfo();
     return NULL;
   }
 
@@ -556,8 +560,8 @@ HERE;
     if (!$sql) die('No SQL Prepared' . PHP_EOL);
     $this->error = NULL;
 
-    print_r($sql);
-    print_r($args);
+    //print_r($sql);
+    //print_r($args);
     try {
       $sql->execute($args);
       return true;
