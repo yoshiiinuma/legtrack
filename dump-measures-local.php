@@ -8,7 +8,7 @@ require_once 'lib/enum.php';
 require_once 'lib/local_sqlite.php';
 
 function usage($argv) {
-  echo "\nUASGE: php select-measures-from-local.php <env> [ALL]\n\n";
+  echo "\nUASGE: php select-measures-from-local.php <env>\n\n";
   echo "  env: development|test|production\n";
 }
 
@@ -19,20 +19,12 @@ function connectLocalDb() {
   return $db;
 }
 
-if ($argc < 1 || $argc > 3) {
+if ($argc < 1 || $argc > 2) {
   usage($argv);
   exit();
 }
 
 $env = ($argc > 1) ? $argv[1]: 'development';
-$all = false;
-if ($argc > 2) {
-  if ($argv[2] != 'ALL') {
-    usage($argv);
-    exit();
-  }
-  $all = true;
-}
 
 $dataTypes = Enum::getDataTypes();
 $measureTypes = Enum::getMeasureTypes();
@@ -43,7 +35,7 @@ loadEnv($env);
 $total = 0;
 $selected = 0;
 
-$sql = ($all) ? LocalSqlite::SELECT_ALL_MEASURES_SQL : LocalSqlite::SELECT_TOP100_MEASURES_SQL; 
+$sql = LocalSqlite::SELECT_ALL_MEASURES_SQL; 
 
 $db = connectLocalDb();
 $stmt = $db->prepare($sql, []);
