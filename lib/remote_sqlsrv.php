@@ -9,16 +9,371 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const CREATE_MEASURE_FULLTEXT_INDEX_SQL = <<<HERE
+    CREATE FULLTEXT CATALOG CatalogMeasures;
+    CREATE FULLTEXT INDEX ON measures (description, reportTitle, measureTitle, status, introducer, currentReferral, companion)
+           KEY INDEX PK_measures ON CatalogMeasures;
+HERE;
+
+  const DROP_MEASURE_FULLTEXT_INDEX_SQL = <<<HERE
+    DROP FULLTEXT INDEX ON measures;
+    DROP FULLTEXT CATAGLOG CatalogMeasures;
+HERE;
+
+  const DROP_TRACKEDMEASURE_PAGE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasurePage' AND xtype='P')
+      DROP PROCEDURE trackedMeasurePage
+HERE;
+
+  const CREATE_TRACKEDMEASURE_PAGE_SQL = <<<HERE
+    CREATE PROCEDURE trackedMeasurePage
+      (
+        @page INT,
+        @size INT,
+        @year INT,
+        @deptId INT
+      )
+      AS
+      BEGIN
+        SELECT t.*,
+               CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,
+               m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+               m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
+               m.introducer, m.currentReferral as committee, m.companion
+          FROM trackedMeasures t
+          JOIN measures m ON m.id = t.measureId
+         WHERE t.year = @year
+           AND t.deptId = @deptId
+           AND t.untracked = 0
+        ORDER BY t.year, t.deptId, t.measureId
+        OFFSET @size * (@page - 1) ROWS
+         FETCH NEXT @size ROWS ONLY;
+      END
+HERE;
+
+  const DROP_MEASURE_SEARCH_PAGE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='measureSearchPage' AND xtype='P')
+      DROP PROCEDURE measureSearchPage
+HERE;
+
+  const CREATE_MEASURE_SEARCH_PAGE_SQL = <<<HERE
+    CREATE PROCEDURE measureSearchPage
+      (
+        @page INT,
+        @size INT,
+        @year INT,
+        @deptId INT,
+        @keywords NVARCHAR(256)
+      )
+      AS
+      BEGIN
+        DECLARE @sql NVARCHAR(1000);
+        DECLARE @params NVARCHAR(500);
+        SET @sql = 'SELECT m.id,' +
+                         ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,' +
+                         ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
+                         ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
+                         ' m.introducer, m.currentReferral as committee, m.companion, t.untracked' +
+                    ' FROM measures m' +
+                    ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
+                   ' WHERE m.year = @year' +
+                     ' AND t.year = @year' +
+                     ' AND t.deptId = @deptId';
+        IF (@keywords is NOT NULL AND LEN(@keywords) > 0)
+          SET @sql +=    ' AND CONTAINS((m.description, m.measureTitle, m.reportTitle, m.status, m.introducer, m.currentReferral, m.companion), @keywords)';
+        SET @sql +=  ' ORDER BY m.id ' +
+                    ' OFFSET @size * (@page - 1) ROWS' +
+                     ' FETCH NEXT @size ROWS ONLY;';
+        SET @params = '@page INT, @size INT, @year INT, @deptId INT, @keywords NVARCHAR(256)';
+        EXECUTE sp_executesql @sql, @params, @page, @size, @year, @deptId, @keywords;
+      END
+HERE;
+
+  const DROP_MEASURE_PAGE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='measurePage' AND xtype='P')
+      DROP PROCEDURE measurePage
+HERE;
+
+  const CREATE_MEASURE_PAGE_SQL = <<<HERE
+    CREATE PROCEDURE measurePage
+      (
+        @page INT,
+        @size INT,
+        @year INT,
+        @deptId INT
+      )
+      AS
+      BEGIN
+        SELECT m.id,
+               CONCAT(TRIM(measureType), RIGHT('00000' + CAST(measureNumber as nvarchar(5)), 5)) as measurTitle,
+               m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+               m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
+               m.introducer, m.currentReferral as committee, m.companion, t.untracked
+          FROM measures m
+          LEFT JOIN trackedMeasures t ON m.id = t.measureId
+         WHERE m.year = @year
+           AND t.year = @year
+           AND t.deptId = @deptId
+        ORDER BY m.id
+        OFFSET @size * (@page - 1) ROWS
+         FETCH NEXT @size ROWS ONLY;
+      END
+HERE;
+
+
+
+
+
+  const DROP_DEPTS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='depts' AND xtype='U')
+      DROP TABLE depts
+HERE;
+
+  const CREATE_DEPTS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='depts' AND xtype='U')
+      CREATE TABLE depts
+      (
+        id smallint,
+        deptName nchar(4) NOT NULL,
+        CONSTRAINT PK_depts PRIMARY KEY CLUSTERED (id)
+      )
+      INSERT INTO depts (id, deptName) VALUES (1,'ADM'), (2,'AGR'), (3,'AGS'), (4,'BED'), (5,'BUF'),
+         (6,'DEF'), (7,'ETS'), (8,'GOV'), (9,'LBR'), (10,'LNR'), (11,'OIP'), (12,'PSD'), (13,'TRN')
+HERE;
+
+  const DROP_ROLES_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='roles' AND xtype='U')
+      DROP TABLE roles
+HERE;
+
+  const CREATE_ROLES_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='roles' AND xtype='U')
+      CREATE TABLE roles
+      (
+        id tinyint,
+        title nvarchar(15) NOT NULL,
+        permission tinyint NOT NULL,
+        CONSTRAINT PK_roles PRIMARY KEY CLUSTERED (id)
+      )
+      INSERT INTO roles (id, title, permission) VALUES (1,'Admin',8), (2,'Coordinator',4), (3,'Cooperator',2),
+        (4,'Approver', 1), (5,'Guest', 0)
+HERE;
+
+  const DROP_USERS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='users' AND xtype='U')
+      DROP TABLE users
+HERE;
+
+  const CREATE_USERS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='users' AND xtype='U')
+      CREATE TABLE users
+      (
+        id int identity(1,1),
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
+        objectId varchar(128),
+        userPrincipalName nvarchar(256) NOT NULL,
+        displayName nvarchar(128) NOT NULL,
+        department nvarchar(128),
+        CONSTRAINT PK_users PRIMARY KEY CLUSTERED (id)
+      )
+HERE;
+
+  const DROP_GROUPS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='groups' AND xtype='U')
+      DROP TABLE groups
+HERE;
+
+  const CREATE_GROUPS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='groups' AND xtype='U')
+      CREATE TABLE groups
+      (
+        id int identity(1,1),
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
+        groupName nvarchar(64) NOT NULL,
+        descritpion nvarchar(512),
+        CONSTRAINT PK_groups PRIMARY KEY CLUSTERED (id),
+        INDEX IX_groups_dept NONCLUSTERED (deptId, id)
+      )
+HERE;
+
+  const DROP_GROUPMEMBERS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='groupMembers' AND xtype='U')
+      DROP TABLE groupMembers
+HERE;
+
+  const CREATE_GROUPMEMBERS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='groupMembers' AND xtype='U')
+      CREATE TABLE groupMembers
+      (
+        userId int NOT NULL FOREIGN KEY REFERENCES users(id),
+        groupId int NOT NULL FOREIGN KEY REFERENCES groups(id),
+        role tinyint NOT NULL FOREIGN KEY REFERENCES roles(id),
+        permission tinyint NOT NULL
+        CONSTRAINT PK_groupmembers PRIMARY KEY CLUSTERED (userId, groupId, role, permission),
+        INDEX IX_groupmembers_by_group NONCLUSTERED (groupId, userId)
+      )
+HERE;
+
+  const DROP_TRACKEDMEASUERS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasures' AND xtype='U')
+      DROP TABLE trackedMeasures
+HERE;
+
+  /**
+   * billProgress: [ 1st Lateral, 1st Decking, 2nd Lateral, 2nd Decking, 2nd Crossover, Final Decking ]
+   *
+   **/
+  const CREATE_TRACKEDMEASURES_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasures' AND xtype='U')
+      CREATE TABLE trackedMeasures
+      (
+        id int identity(1,1) NOT NULL UNIQUE,
+        year smallint NOT NULL,
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
+        measureId int NOT NULL FOREIGN KEY REFERENCES measures(id),
+        untracked bit DEFAULT 0,
+        billProgress nvarchar(18),
+        scrNo nvarchar(18),
+        adminBill bit DEFAULT 0,
+        dead bit DEFAULT 0,
+        confirmed bit DEFAULT 0,
+        passed bit DEFAULT 0,
+        ccr bit DEFAULT 0,
+        appropriation bit DEFAULT 0,
+        appropriationAmount nvarchar(256),
+        report bit DEFAULT 0,
+        directorAttention bit DEFAULT 0,
+        govMsgNo nvarchar(12),
+        dateToGov date,
+        actNo nvarchar(12),
+        actDate date,
+        reportingRequirement nvarchar(256),
+        reportDueDate nvarchar(12),
+        sectionsAffected nvarchar(128),
+        effectiveDate date,
+        veto bit DEFAULT 0,
+        vetoDate date,
+        vetoOverride bit DEFAULT 0,
+        vetoOverrideDate date,
+        finalBill nvarchar(128),
+        version nvarchar(128),
+        createdBy int,
+        createdAt datetime,
+        modifiedBy int,
+        modifiedAt datetime,
+        CONSTRAINT PK_trackedmeasures PRIMARY KEY CLUSTERED (year, deptId, measureId),
+        INDEX IX_trackedmeasures NONCLUSTERED (id)
+      )
+HERE;
+
+  const DROP_POSITIONS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positions' AND xtype='U')
+      DROP TABLE positions
+HERE;
+
+  /**
+   * CategoryForTestify:      [ Know OutCome, Monitor, Testify ]
+   * TrackedMeasureRole:      [ Primay, Secondary ]
+   * Position:                [ Support, Oppose, Comments, No Position ]
+   * TestimonyStatus:         [ Draft, Final, None ]
+   * TestimonyApprovalStatus: [ Approved, Pending ]
+   * StaffComments: Archive of routed info 
+   *
+   *
+        committee nvarchar(128),         ==> measures (already have)
+        draftNo nvarchar(128),           ==> measures (scraper & uploader need to be updated), or TrackedMeasures temporarily 
+        staffComments ntext,             ==> New Table
+        route nvarchar(1024),            ==> No Need
+        routeItem nvarchar(1024),
+        routedTo int,
+        routingInfo ntext,
+   **/
+  const CREATE_POSITIONS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='positions' AND xtype='U')
+      CREATE TABLE positions
+      (
+        id int identity(1,1) NOT NULL UNIQUE,
+        year smallint NOT NULL,
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
+        measureId int NOT NULL FOREIGN KEY REFERENCES measures(id),
+        groupId int NOT NULL FOREIGN KEY REFERENCES groups(id),
+        role nvarchar(8),
+        category nvarchar(8),
+        position nvarchar(12),
+        approvalStatus nvarchar(8),
+        status nvarchar(8),
+        assignedTo int,
+        version nvarchar(128),
+        createdBy int,
+        createdAt datetime,
+        modifiedBy int,
+        modifiedAt datetime,
+        CONSTRAINT PK_positions PRIMARY KEY CLUSTERED (year, deptId, measureId, groupId),
+        INDEX IX_positions NONCLUSTERED (id),
+        INDEX IX_positions_by_group NONCLUSTERED (groupId, year, deptId, measureId)
+      )
+HERE;
+
+  const DROP_COMMENTS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='comments' AND xtype='U')
+      DROP TABLE comments
+HERE;
+
+  const CREATE_COMMENTS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='comments' AND xtype='U')
+      CREATE TABLE comments
+      (
+        year smallint NOT NULL,
+        positionId int NOT NULL FOREIGN KEY REFERENCES positions(id),
+        createtBy int NOT NULL FOREIGN KEY REFERENCES users(id),
+        createdAt datetime,
+        comment ntext,
+        CONSTRAINT PK_comments PRIMARY KEY CLUSTERED (year, positionId, createdAt)
+      )
+HERE;
+
+  const DROP_POSITION_BOOKMARKS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionBookmarks' AND xtype='U')
+      DROP TABLE positionBookmarks
+HERE;
+
+  const CREATE_POSITION_BOOKMARKS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='positionBookmarks' AND xtype='U')
+      CREATE TABLE positionBookmarks
+      (
+        year smallint NOT NULL,
+        userId int NOT NULL FOREIGN KEY REFERENCES users(id),
+        positionId int NOT NULL FOREIGN KEY REFERENCES positions(id),
+        CONSTRAINT PK_positionbookmarks PRIMARY KEY CLUSTERED (year, userId, positionId)
+      )
+HERE;
+
+  const DROP_MEASURE_BOOKMARKS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='measureBookmarks' AND xtype='U')
+      DROP TABLE measureBookmarks
+HERE;
+
+  const CREATE_MEASURE_BOOKMARKS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='measureBookmarks' AND xtype='U')
+      CREATE TABLE measureBookmarks
+      (
+        year smallint NOT NULL,
+        userId int NOT NULL FOREIGN KEY REFERENCES users(id),
+        trackedMeasureId int NOT NULL FOREIGN KEY REFERENCES trackedMeasures(id),
+        CONSTRAINT PK_measurebookmarks PRIMARY KEY CLUSTERED (year, userId, trackedMeasureId)
+      )
+HERE;
+
   const DROP_HEARINGS_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='hearings' AND xtype='U')
       DROP TABLE hearings
 HERE;
 
-
   const CREATE_HEARINGS_TABLE_SQL = <<<HERE
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='hearings' AND xtype='U')
       CREATE TABLE hearings
       (
+        id int identity(1,1),
         year smallint NOT NULL,
         measureType nchar(4) NOT NULL,
         measureNumber smallint NOT NULL,
@@ -33,9 +388,11 @@ HERE;
         notice nvarchar(128),
         noticeUrl nvarchar(512),
         noticePdfUrl nvarchar(512),
+        CONSTRAINT PK_hearings PRIMARY KEY CLUSTERED (id),
         UNIQUE (year, measureType, measureNumber, notice)
       )
 HERE;
+
 
   const DROP_MEASURES_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='measures' AND xtype='U')
@@ -46,7 +403,7 @@ HERE;
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='measures' AND xtype='U')
       CREATE TABLE measures
       (
-        id int identity(1,1) NOT NULL PRIMARY KEY,
+        id int identity(1,1),
         year smallint NOT NULL,
         measureType nchar(3) NOT NULL,
         measureNumber smallint NOT NULL,
@@ -62,7 +419,8 @@ HERE;
         introducer nvarchar(512),
         currentReferral nvarchar(256),
         companion nvarchar(256),
-        UNIQUE (year, measureType, measureNumber)
+        CONSTRAINT PK_measures PRIMARY KEY CLUSTERED (id),
+        CONSTRAINT UQ_measures UNIQUE (year, measureType, measureNumber)
       )
 HERE;
 
