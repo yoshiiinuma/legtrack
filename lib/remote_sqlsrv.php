@@ -9,6 +9,27 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_MEASURE_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='measureTotal' AND xtype='V')
+      DROP VIEW measureView
+HERE;
+
+  const CREATE_MEASURE_VIEW_SQL = <<<HERE
+    CREATE VIEW measureView AS
+    SELECT m.id, CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,
+           m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+           m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
+           m.introducer, m.currentReferral as committee, m.companion, t.untracked
+      FROM measures m
+      LEFT JOIN trackedMeasures t ON m.id = t.measureId
+     ORDER BY m.id 
+HERE;
+
+
+
+
+
+
   const CREATE_MEASURE_FULLTEXT_INDEX_SQL = <<<HERE
     CREATE FULLTEXT CATALOG CatalogMeasures;
     CREATE FULLTEXT INDEX ON measures (description, reportTitle, measureTitle, status, introducer, currentReferral, companion)
@@ -19,6 +40,63 @@ HERE;
     DROP FULLTEXT INDEX ON measures;
     DROP FULLTEXT CATAGLOG CatalogMeasures;
 HERE;
+
+  const DROP_TRACKEDMEASURE_TOTAL_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasureTotal' AND xtype='P')
+      DROP PROCEDURE trackedMeasureTotal
+HERE;
+
+  const CREATE_TRACKEDMEASURE_TOTAL_SQL = <<<HERE
+    CREATE PROCEDURE trackedMeasureTotal
+      (
+        @size INT,
+        @year INT,
+        @deptId INT
+      )
+      AS
+      BEGIN
+        SELECT count(*) AS records, count(*) / @size + 1 AS pages
+          FROM trackedMeasures t
+          JOIN measures m ON m.id = t.measureId
+                         AND t.deptId = @deptId
+                         AND t.untracked = 0
+         WHERE t.year = @year
+      END
+HERE;
+
+  const DROP_MEASURE_TOTAL_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='measureTotal' AND xtype='P')
+      DROP PROCEDURE measureTotal
+HERE;
+
+  const CREATE_MEASURE_TOTAL_SQL = <<<HERE
+    CREATE PROCEDURE measureTotal
+      (
+        @size INT,
+        @year INT,
+        @deptId INT,
+        @keywords NVARCHAR(256)
+      )
+      AS
+      BEGIN
+        DECLARE @sql NVARCHAR(1000);
+        DECLARE @params NVARCHAR(500);
+        SET @sql = 'SELECT count(*) AS records, count(*) / @size + 1 AS pages' +
+                    ' FROM measures m' +
+                    ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
+                                               ' AND t.year = @year' +
+                                               ' AND t.deptId = @deptId' +
+                   ' WHERE m.year = @year';
+        IF (@keywords is NOT NULL AND LEN(@keywords) > 0)
+          SET @sql +=    ' AND CONTAINS((m.description, m.measureTitle, m.reportTitle, m.status, m.introducer, m.currentReferral, m.companion), @keywords)';
+        SET @params = '@size INT, @year INT, @deptId INT, @keywords NVARCHAR(256)';
+        EXECUTE sp_executesql @sql, @params, @size, @year, @deptId, @keywords;
+      END
+HERE;
+
+
+
+
 
   const DROP_TRACKEDMEASURE_PAGE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasurePage' AND xtype='P')
@@ -35,6 +113,13 @@ HERE;
       )
       AS
       BEGIN
+        SELECT count(*) AS records, count(*) / @size + 1 AS pages
+          FROM trackedMeasures t
+          JOIN measures m ON m.id = t.measureId
+                         AND t.deptId = @deptId
+                         AND t.untracked = 0
+         WHERE t.year = @year;
+
         SELECT t.*,
                CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,
                m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
@@ -42,10 +127,36 @@ HERE;
                m.introducer, m.currentReferral as committee, m.companion
           FROM trackedMeasures t
           JOIN measures m ON m.id = t.measureId
+                         AND t.deptId = @deptId
+                         AND t.untracked = 0
          WHERE t.year = @year
-           AND t.deptId = @deptId
-           AND t.untracked = 0
-        ORDER BY t.year, t.deptId, t.measureId
+         ORDER BY t.year, t.deptId, t.measureId
+        OFFSET @size * (@page - 1) ROWS
+         FETCH NEXT @size ROWS ONLY;
+      END
+HERE;
+
+  const CREATE_TRACKEDMEASURE_PAGE_SQL_OLD = <<<HERE
+    CREATE PROCEDURE trackedMeasurePage
+      (
+        @page INT,
+        @size INT,
+        @year INT,
+        @deptId INT
+      )
+      AS
+      BEGIN
+        SELECT t.*,
+               CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,
+               m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+               m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
+               m.introducer, m.currentReferral as committee, m.companion
+          FROM trackedMeasures t
+          JOIN measures m ON m.id = t.measureId
+                         AND t.deptId = @deptId
+                         AND t.untracked = 0
+         WHERE t.year = @year
+         ORDER BY t.year, t.deptId, t.measureId
         OFFSET @size * (@page - 1) ROWS
          FETCH NEXT @size ROWS ONLY;
       END
@@ -69,21 +180,66 @@ HERE;
       BEGIN
         DECLARE @sql NVARCHAR(1000);
         DECLARE @params NVARCHAR(500);
-        SET @sql = 'SELECT m.id,' +
-                         ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,' +
-                         ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
-                         ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
-                         ' m.introducer, m.currentReferral as committee, m.companion, t.untracked' +
+
+        SET @sql = 'SELECT count(*) AS records, count(*) / @size + 1 AS pages' +
                     ' FROM measures m' +
                     ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
-                   ' WHERE m.year = @year' +
-                     ' AND t.year = @year' +
-                     ' AND t.deptId = @deptId';
+                                               ' AND t.year = @year' +
+                                               ' AND t.deptId = @deptId' +
+                   ' WHERE m.year = @year';
         IF (@keywords is NOT NULL AND LEN(@keywords) > 0)
           SET @sql +=    ' AND CONTAINS((m.description, m.measureTitle, m.reportTitle, m.status, m.introducer, m.currentReferral, m.companion), @keywords)';
-        SET @sql +=  ' ORDER BY m.id ' +
-                    ' OFFSET @size * (@page - 1) ROWS' +
-                     ' FETCH NEXT @size ROWS ONLY;';
+        SET @params = '@size INT, @year INT, @deptId INT, @keywords NVARCHAR(256)';
+        EXECUTE sp_executesql @sql, @params, @size, @year, @deptId, @keywords;
+
+        SET @sql = ' SELECT m.id,' +
+                          ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,' +
+                          ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
+                          ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
+                          ' m.introducer, m.currentReferral as committee, m.companion, t.untracked' +
+                     ' FROM measures m' +
+                     ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
+                                                ' AND t.year = @year' +
+                                                ' AND t.deptId = @deptId' +
+                    ' WHERE m.year = @year';
+        IF (@keywords is NOT NULL AND LEN(@keywords) > 0)
+          SET @sql += ' AND CONTAINS((m.description, m.measureTitle, m.reportTitle, m.status, m.introducer, m.currentReferral, m.companion), @keywords)';
+        SET @sql += ' ORDER BY m.id ' +
+                   ' OFFSET @size * (@page - 1) ROWS' +
+                    ' FETCH NEXT @size ROWS ONLY;';
+        SET @params = '@page INT, @size INT, @year INT, @deptId INT, @keywords NVARCHAR(256)';
+        EXECUTE sp_executesql @sql, @params, @page, @size, @year, @deptId, @keywords;
+      END
+HERE;
+
+  const CREATE_MEASURE_SEARCH_PAGE_SQL_OLD = <<<HERE
+    CREATE PROCEDURE measureSearchPage
+      (
+        @page INT,
+        @size INT,
+        @year INT,
+        @deptId INT,
+        @keywords NVARCHAR(256)
+      )
+      AS
+      BEGIN
+        DECLARE @sql NVARCHAR(1000);
+        DECLARE @params NVARCHAR(500);
+        SET @sql = ' SELECT m.id,' +
+                          ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,' +
+                          ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
+                          ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
+                          ' m.introducer, m.currentReferral as committee, m.companion, t.untracked' +
+                     ' FROM measures m' +
+                     ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
+                                                ' AND t.year = @year' +
+                                                ' AND t.deptId = @deptId' +
+                    ' WHERE m.year = @year';
+        IF (@keywords is NOT NULL AND LEN(@keywords) > 0)
+          SET @sql += ' AND CONTAINS((m.description, m.measureTitle, m.reportTitle, m.status, m.introducer, m.currentReferral, m.companion), @keywords)';
+        SET @sql += ' ORDER BY m.id ' +
+                   ' OFFSET @size * (@page - 1) ROWS' +
+                    ' FETCH NEXT @size ROWS ONLY;';
         SET @params = '@page INT, @size INT, @year INT, @deptId INT, @keywords NVARCHAR(256)';
         EXECUTE sp_executesql @sql, @params, @page, @size, @year, @deptId, @keywords;
       END
@@ -111,9 +267,9 @@ HERE;
                m.introducer, m.currentReferral as committee, m.companion, t.untracked
           FROM measures m
           LEFT JOIN trackedMeasures t ON m.id = t.measureId
+                                     AND t.year = @year
+                                     AND t.deptId = @deptId
          WHERE m.year = @year
-           AND t.year = @year
-           AND t.deptId = @deptId
         ORDER BY m.id
         OFFSET @size * (@page - 1) ROWS
          FETCH NEXT @size ROWS ONLY;
