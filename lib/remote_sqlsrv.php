@@ -135,6 +135,58 @@ HERE;
 
 
 
+  const DROP_POSITION_PAGE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionPage' AND xtype='P')
+      DROP PROCEDURE positionPage
+HERE;
+
+  const CREATE_POSITION_PAGE_SQL = <<<HERE
+    CREATE PROCEDURE positionPage
+      (
+        @page INT,
+        @size INT,
+        @year INT,
+        @deptId INT
+      )
+      AS
+      BEGIN
+        SELECT count(*) AS records, count(*) / @size + 1 AS pages
+          FROM trackedMeasures t
+          LEFT JOIN positions p ON t.year = @year
+                               AND t.deptId = @deptId
+                               AND p.year = t.year
+                               AND p.deptId = t.deptId
+                               AND p.measureId = t.measureId
+         WHERE t.year = @year
+           AND t.deptId = @deptId;
+
+        SELECT t.id as trakedMeasureId, t.measureId, t.tracked, t.year, t.deptId,
+               p.groupId, p.id as positionId,
+               CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
+               m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+               m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status as measureStatus,
+               m.introducer, m.currentReferral as committee, m.companion,
+               t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
+               t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
+               t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
+               t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate, t.finalBill,
+               p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
+               t.version as trackedMeasureVersion, p.version as positionVersion
+          FROM trackedMeasures t
+          LEFT JOIN positions p ON t.year = @year
+                               AND t.deptId = @deptId
+                               AND p.year = t.year
+                               AND p.deptId = t.deptId
+                               AND p.measureId = t.measureId
+          JOIN measures m ON m.id = t.measureId
+         WHERE t.year = @year
+           AND t.deptId = @deptId
+         ORDER BY t.year, t.deptId, t.measureId
+        OFFSET @size * (@page - 1) ROWS
+         FETCH NEXT @size ROWS ONLY;
+      END
+HERE;
+
 
 
   const DROP_TRACKEDMEASURE_PAGE_SQL = <<<HERE
@@ -155,20 +207,27 @@ HERE;
         SELECT count(*) AS records, count(*) / @size + 1 AS pages
           FROM trackedMeasures t
           JOIN measures m ON m.id = t.measureId
+                         AND t.year = @year
                          AND t.deptId = @deptId
-                         AND t.tracked = 1
-         WHERE t.year = @year;
+         WHERE t.year = @year
+           AND t.deptId = @deptId;
 
-        SELECT t.*,
+        SELECT t.id as trakedMeasureId, t.measureId, t.tracked, t.year, t.deptId,
                CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
                m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
                m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
-               m.introducer, m.currentReferral as committee, m.companion
+               m.introducer, m.currentReferral as committee, m.companion,
+               t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
+               t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
+               t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
+               t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate,
+               t.finalBill, t.version
           FROM trackedMeasures t
           JOIN measures m ON m.id = t.measureId
+                         AND t.year = @year
                          AND t.deptId = @deptId
-                         AND t.tracked = 1
          WHERE t.year = @year
+           AND t.deptId = @deptId
          ORDER BY t.year, t.deptId, t.measureId
         OFFSET @size * (@page - 1) ROWS
          FETCH NEXT @size ROWS ONLY;

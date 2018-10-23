@@ -26,6 +26,7 @@ $db->connect();
 $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_PAGE_SQL);
 $db->query(RemoteSqlsrv::DROP_MEASURE_PAGE_SQL);
 $db->query(RemoteSqlsrv::DROP_MEASURE_SEARCH_PAGE_SQL);
+$db->query(RemoteSqlsrv::DROP_POSITION_PAGE_SQL);
 
 $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_TOTAL_SQL);
 $db->query(RemoteSqlsrv::DROP_MEASURE_TOTAL_SQL);
