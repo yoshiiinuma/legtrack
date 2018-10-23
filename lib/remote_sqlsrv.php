@@ -9,6 +9,36 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_GROUPMEMBER_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='groupMemberView' AND xtype='V')
+      DROP VIEW groupMemberView
+HERE;
+
+  const CREATE_GROUPMEMBER_VIEW_SQL = <<<HERE
+    CREATE VIEW groupMemberView AS
+    SELECT m.userId, m.groupId, g.groupName, u.displayName, u.userPrincipalName, m.role, r.title, r.permission
+      FROM groupMembers m
+      JOIN users u ON u.id = m.userId
+      JOIN groups g ON g.id = m.groupId
+      JOIN roles r ON r.id = m.role
+HERE;
+
+  const DROP_GROUP_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='groupView' AND xtype='V')
+      DROP VIEW groupView
+HERE;
+
+  const CREATE_GROUP_VIEW_SQL = <<<HERE
+    CREATE VIEW groupView AS
+    SELECT g.id, g.deptID, d.deptName, g.groupName, g.description
+      FROM groups g
+      JOIN depts d ON d.id = g.deptId
+HERE;
+
+
+
+
+
   const DROP_POSITION_VIEW_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positionView' AND xtype='V')
       DROP VIEW positionView
@@ -444,7 +474,7 @@ HERE;
         id int identity(1,1),
         deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
         groupName nvarchar(64) NOT NULL,
-        descritpion nvarchar(512),
+        description nvarchar(512),
         CONSTRAINT PK_groups PRIMARY KEY CLUSTERED (id),
         INDEX IX_groups_dept NONCLUSTERED (deptId, id)
       )

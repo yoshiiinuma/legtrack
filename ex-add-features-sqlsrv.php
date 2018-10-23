@@ -34,6 +34,8 @@ $db->query(RemoteSqlsrv::CREATE_MEASURE_TOTAL_SQL);
 $db->query(RemoteSqlsrv::CREATE_MEASURE_VIEW_SQL);
 $db->query(RemoteSqlsrv::CREATE_TRACKEDMEASURE_VIEW_SQL);
 $db->query(RemoteSqlsrv::CREATE_POSITION_VIEW_SQL);
+$db->query(RemoteSqlsrv::CREATE_GROUP_VIEW_SQL);
+$db->query(RemoteSqlsrv::CREATE_GROUPMEMBER_VIEW_SQL);
 ?>
 
 

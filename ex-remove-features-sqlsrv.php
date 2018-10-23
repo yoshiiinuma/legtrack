@@ -34,6 +34,8 @@ $db->query(RemoteSqlsrv::DROP_MEASURE_TOTAL_SQL);
 $db->query(RemoteSqlsrv::DROP_MEASURE_VIEW_SQL);
 $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_VIEW_SQL);
 $db->query(RemoteSqlsrv::DROP_POSITION_VIEW_SQL);
+$db->query(RemoteSqlsrv::DROP_GROUP_VIEW_SQL);
+$db->query(RemoteSqlsrv::DROP_GROUPMEMBER_VIEW_SQL);
 ?>
 
 
