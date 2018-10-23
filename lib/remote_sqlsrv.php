@@ -9,26 +9,65 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_POSITION_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionView' AND xtype='V')
+      DROP VIEW positionView
+HERE;
+
+  const CREATE_POSITION_VIEW_SQL = <<<HERE
+    CREATE VIEW positionView AS
+    SELECT p.id as positionId, t.id as trakedMeasureId, t.measureId, t.year, t.deptId, p.groupId,
+           t.tracked, p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
+           t.billId, t.measureType, t.measureNumber, t.code, t.measurePdfUrl, t.measureArchiveUrl,
+           t.measureTitle, t.reportTitle, t.bitAppropriation, t.description, t.measureStatus,
+           t.introducer, t.committee, t.companion,
+           t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
+           t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
+           t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
+           t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate,
+           t.finalBill, t.version as trackedMeasureVersion, p.version as positionVersion
+      FROM trackedMeasureView t
+      JOIN positions p ON p.year = t.year
+                      AND p.deptId = t.deptId
+                      AND p.measureId = t.measureId
+HERE;
+
+  const DROP_TRACKEDMEASURE_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasureView' AND xtype='V')
+      DROP VIEW trackedMeasureView
+HERE;
+
+  const CREATE_TRACKEDMEASURE_VIEW_SQL = <<<HERE
+    CREATE VIEW trackedMeasureView AS
+    SELECT t.id, t.measureId, m.year, t.deptId, t.tracked,
+           CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
+           m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+           m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status as measureStatus,
+           m.introducer, m.currentReferral as committee, m.companion,
+           t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
+           t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
+           t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
+           t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate,
+           t.finalBill, t.version
+      FROM trackedMeasures t
+      JOIN measures m ON m.id = t.measureId
+HERE;
+
   const DROP_MEASURE_VIEW_SQL = <<<HERE
-    IF EXISTS (SELECT * FROM sysobjects WHERE name='measureTotal' AND xtype='V')
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='measureView' AND xtype='V')
       DROP VIEW measureView
 HERE;
 
   const CREATE_MEASURE_VIEW_SQL = <<<HERE
     CREATE VIEW measureView AS
-    SELECT m.id, CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,
+    SELECT m.id, m.year, ISNULL(t.deptId, -1) as deptId,
+           CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
            m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
            m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
-           m.introducer, m.currentReferral as committee, m.companion, t.untracked
+           m.introducer, m.currentReferral as committee, m.companion, ISNULL(t.tracked, 0) as tracked
       FROM measures m
       LEFT JOIN trackedMeasures t ON m.id = t.measureId
-     ORDER BY m.id 
 HERE;
-
-
-
-
-
 
   const CREATE_MEASURE_FULLTEXT_INDEX_SQL = <<<HERE
     CREATE FULLTEXT CATALOG CatalogMeasures;
@@ -59,7 +98,7 @@ HERE;
           FROM trackedMeasures t
           JOIN measures m ON m.id = t.measureId
                          AND t.deptId = @deptId
-                         AND t.untracked = 0
+                         AND t.tracked = 0
          WHERE t.year = @year
       END
 HERE;
@@ -117,18 +156,18 @@ HERE;
           FROM trackedMeasures t
           JOIN measures m ON m.id = t.measureId
                          AND t.deptId = @deptId
-                         AND t.untracked = 0
+                         AND t.tracked = 1
          WHERE t.year = @year;
 
         SELECT t.*,
-               CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,
+               CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
                m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
                m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
                m.introducer, m.currentReferral as committee, m.companion
           FROM trackedMeasures t
           JOIN measures m ON m.id = t.measureId
                          AND t.deptId = @deptId
-                         AND t.untracked = 0
+                         AND t.tracked = 1
          WHERE t.year = @year
          ORDER BY t.year, t.deptId, t.measureId
         OFFSET @size * (@page - 1) ROWS
@@ -147,14 +186,14 @@ HERE;
       AS
       BEGIN
         SELECT t.*,
-               CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,
+               CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
                m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
                m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
                m.introducer, m.currentReferral as committee, m.companion
           FROM trackedMeasures t
           JOIN measures m ON m.id = t.measureId
                          AND t.deptId = @deptId
-                         AND t.untracked = 0
+                         AND t.tracked = 1
          WHERE t.year = @year
          ORDER BY t.year, t.deptId, t.measureId
         OFFSET @size * (@page - 1) ROWS
@@ -193,10 +232,10 @@ HERE;
         EXECUTE sp_executesql @sql, @params, @size, @year, @deptId, @keywords;
 
         SET @sql = ' SELECT m.id,' +
-                          ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,' +
+                          ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,' +
                           ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
                           ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
-                          ' m.introducer, m.currentReferral as committee, m.companion, t.untracked' +
+                          ' m.introducer, m.currentReferral as committee, m.companion, t.tracked' +
                      ' FROM measures m' +
                      ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
                                                 ' AND t.year = @year' +
@@ -226,10 +265,10 @@ HERE;
         DECLARE @sql NVARCHAR(1000);
         DECLARE @params NVARCHAR(500);
         SET @sql = ' SELECT m.id,' +
-                          ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as measurTitle,' +
+                          ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,' +
                           ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
                           ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
-                          ' m.introducer, m.currentReferral as committee, m.companion, t.untracked' +
+                          ' m.introducer, m.currentReferral as committee, m.companion, t.tracked' +
                      ' FROM measures m' +
                      ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
                                                 ' AND t.year = @year' +
@@ -261,10 +300,10 @@ HERE;
       AS
       BEGIN
         SELECT m.id,
-               CONCAT(TRIM(measureType), RIGHT('00000' + CAST(measureNumber as nvarchar(5)), 5)) as measurTitle,
+               CONCAT(TRIM(measureType), RIGHT('00000' + CAST(measureNumber as nvarchar(5)), 5)) as billId,
                m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
                m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
-               m.introducer, m.currentReferral as committee, m.companion, t.untracked
+               m.introducer, m.currentReferral as committee, m.companion, t.tracked
           FROM measures m
           LEFT JOIN trackedMeasures t ON m.id = t.measureId
                                      AND t.year = @year
@@ -387,7 +426,7 @@ HERE;
         year smallint NOT NULL,
         deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
         measureId int NOT NULL FOREIGN KEY REFERENCES measures(id),
-        untracked bit DEFAULT 0,
+        tracked bit DEFAULT 1,
         billProgress nvarchar(18),
         scrNo nvarchar(18),
         adminBill bit DEFAULT 0,
