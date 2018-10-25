@@ -16,11 +16,12 @@ HERE;
 
   const CREATE_GROUPMEMBER_VIEW_SQL = <<<HERE
     CREATE VIEW groupMemberView AS
-    SELECT m.userId, m.groupId, g.groupName, u.displayName, u.userPrincipalName, m.role, r.title, r.permission
+    SELECT m.userId, m.groupId, g.deptId, d.deptName, g.groupName, u.displayName, u.userPrincipalName, m.role, r.title, r.permission
       FROM groupMembers m
       JOIN users u ON u.id = m.userId
       JOIN groups g ON g.id = m.groupId
       JOIN roles r ON r.id = m.role
+      JOIN depts d ON d.id = g.deptId
 HERE;
 
   const DROP_GROUP_VIEW_SQL = <<<HERE
@@ -34,10 +35,6 @@ HERE;
       FROM groups g
       JOIN depts d ON d.id = g.deptId
 HERE;
-
-
-
-
 
   const DROP_POSITION_VIEW_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positionView' AND xtype='V')
@@ -324,40 +321,7 @@ HERE;
                           ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,' +
                           ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
                           ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
-                          ' m.introducer, m.currentReferral as committee, m.companion, t.tracked' +
-                     ' FROM measures m' +
-                     ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
-                                                ' AND t.year = @year' +
-                                                ' AND t.deptId = @deptId' +
-                    ' WHERE m.year = @year';
-        IF (@keywords is NOT NULL AND LEN(@keywords) > 0)
-          SET @sql += ' AND CONTAINS((m.description, m.measureTitle, m.reportTitle, m.status, m.introducer, m.currentReferral, m.companion), @keywords)';
-        SET @sql += ' ORDER BY m.id ' +
-                   ' OFFSET @size * (@page - 1) ROWS' +
-                    ' FETCH NEXT @size ROWS ONLY;';
-        SET @params = '@page INT, @size INT, @year INT, @deptId INT, @keywords NVARCHAR(256)';
-        EXECUTE sp_executesql @sql, @params, @page, @size, @year, @deptId, @keywords;
-      END
-HERE;
-
-  const CREATE_MEASURE_SEARCH_PAGE_SQL_OLD = <<<HERE
-    CREATE PROCEDURE measureSearchPage
-      (
-        @page INT,
-        @size INT,
-        @year INT,
-        @deptId INT,
-        @keywords NVARCHAR(256)
-      )
-      AS
-      BEGIN
-        DECLARE @sql NVARCHAR(1000);
-        DECLARE @params NVARCHAR(500);
-        SET @sql = ' SELECT m.id,' +
-                          ' CONCAT(TRIM(m.measureType), RIGHT(''00000'' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,' +
-                          ' m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,' +
-                          ' m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,' +
-                          ' m.introducer, m.currentReferral as committee, m.companion, t.tracked' +
+                          ' m.introducer, m.currentReferral as committee, m.companion, ISNULL(t.tracked, 0) as tracked' +
                      ' FROM measures m' +
                      ' LEFT JOIN trackedMeasures t ON m.id = t.measureId' +
                                                 ' AND t.year = @year' +
@@ -392,7 +356,7 @@ HERE;
                CONCAT(TRIM(measureType), RIGHT('00000' + CAST(measureNumber as nvarchar(5)), 5)) as billId,
                m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
                m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
-               m.introducer, m.currentReferral as committee, m.companion, t.tracked
+               m.introducer, m.currentReferral as committee, m.companion, ISNULL(t.tracked, 0) as tracked
           FROM measures m
           LEFT JOIN trackedMeasures t ON m.id = t.measureId
                                      AND t.year = @year
