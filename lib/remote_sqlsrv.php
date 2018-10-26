@@ -16,11 +16,11 @@ HERE;
 
   const CREATE_GROUPMEMBER_VIEW_SQL = <<<HERE
     CREATE VIEW groupMemberView AS
-    SELECT m.userId, m.groupId, g.deptId, d.deptName, g.groupName, u.displayName, u.userPrincipalName, m.role, r.title, r.permission
+    SELECT m.userId, m.groupId, g.deptId, d.deptName, g.groupName, u.displayName, u.userPrincipalName, m.roleId, r.title, r.permission
       FROM groupMembers m
       JOIN users u ON u.id = m.userId
       JOIN groups g ON g.id = m.groupId
-      JOIN roles r ON r.id = m.role
+      JOIN roles r ON r.id = m.roleId
       JOIN depts d ON d.id = g.deptId
 HERE;
 
@@ -44,7 +44,7 @@ HERE;
   const CREATE_POSITION_VIEW_SQL = <<<HERE
     CREATE VIEW positionView AS
     SELECT p.id as positionId, t.id as trakedMeasureId, t.measureId, t.year, t.deptId, p.groupId,
-           t.tracked, p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
+           t.tracked, p.roleId, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
            t.billId, t.measureType, t.measureNumber, t.code, t.measurePdfUrl, t.measureArchiveUrl,
            t.measureTitle, t.reportTitle, t.bitAppropriation, t.description, t.measureStatus,
            t.introducer, t.committee, t.companion,
@@ -197,7 +197,7 @@ HERE;
                t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
                t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
                t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate, t.finalBill,
-               p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
+               p.roleId, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
                t.version as trackedMeasureVersion, p.version as positionVersion
           FROM trackedMeasures t
           LEFT JOIN positions p ON t.year = @year
@@ -455,9 +455,9 @@ HERE;
       (
         userId int NOT NULL FOREIGN KEY REFERENCES users(id),
         groupId int NOT NULL FOREIGN KEY REFERENCES groups(id),
-        role tinyint NOT NULL FOREIGN KEY REFERENCES roles(id),
+        roleId tinyint NOT NULL FOREIGN KEY REFERENCES roles(id),
         permission tinyint NOT NULL
-        CONSTRAINT PK_groupmembers PRIMARY KEY CLUSTERED (userId, groupId, role, permission),
+        CONSTRAINT PK_groupmembers PRIMARY KEY CLUSTERED (userId, groupId, roleId, permission),
         INDEX IX_groupmembers_by_group NONCLUSTERED (groupId, userId)
       )
 HERE;
