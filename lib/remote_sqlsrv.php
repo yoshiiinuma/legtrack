@@ -44,7 +44,7 @@ HERE;
   const CREATE_POSITION_VIEW_SQL = <<<HERE
     CREATE VIEW positionView AS
     SELECT p.id as positionId, t.id as trakedMeasureId, t.measureId, t.year, t.deptId, p.groupId,
-           t.tracked, p.roleId, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
+           t.tracked, p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
            t.billId, t.measureType, t.measureNumber, t.code, t.measurePdfUrl, t.measureArchiveUrl,
            t.measureTitle, t.reportTitle, t.bitAppropriation, t.description, t.measureStatus,
            t.introducer, t.committee, t.companion,
@@ -87,13 +87,18 @@ HERE;
 
   const CREATE_MEASURE_VIEW_SQL = <<<HERE
     CREATE VIEW measureView AS
-    SELECT m.id, m.year, ISNULL(t.deptId, -1) as deptId,
+    SELECT m.id, m.year,
            CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
            m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
            m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
-           m.introducer, m.currentReferral as committee, m.companion, ISNULL(t.tracked, 0) as tracked
+           m.introducer, m.currentReferral as committee, m.companion,
+           (SELECT ',' + CAST(t.deptId as nvarchar(12))
+              FROM trackedMeasures t
+              WHERE t.tracked = 1 AND t.measureId = m.id
+              ORDER BY t.deptId
+              FOR XML PATH('') 
+           )  as trackedBy
       FROM measures m
-      LEFT JOIN trackedMeasures t ON m.id = t.measureId
 HERE;
 
   const CREATE_MEASURE_FULLTEXT_INDEX_SQL = <<<HERE
@@ -161,7 +166,6 @@ HERE;
 HERE;
 
 
-
   const DROP_POSITION_PAGE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positionPage' AND xtype='P')
       DROP PROCEDURE positionPage
@@ -197,7 +201,7 @@ HERE;
                t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
                t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
                t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate, t.finalBill,
-               p.roleId, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
+               p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
                t.version as trackedMeasureVersion, p.version as positionVersion
           FROM trackedMeasures t
           LEFT JOIN positions p ON t.year = @year
@@ -666,6 +670,7 @@ HERE;
         status nvarchar(512),
         introducer nvarchar(512),
         currentReferral nvarchar(256),
+        trackingDepts nvarchar(256),
         companion nvarchar(256),
         CONSTRAINT PK_measures PRIMARY KEY CLUSTERED (id),
         CONSTRAINT UQ_measures UNIQUE (year, measureType, measureNumber)
