@@ -9,6 +9,36 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_TRACKING_DEPTS_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackingDeptsTrigger' AND xtype='TR')
+      DROP TRIGGER trackingDeptsTrigger
+HERE;
+
+  const CREATE_TRACKING_DEPTS_TRIGGER = <<<HERE
+    CREATE TRIGGER trackingDeptsTrigger ON trackedMeasures
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+      SET NOCOUNT ON
+      IF UPDATE (tracked)
+      BEGIN
+        DECLARE @measureId int = (SELECT measureId from INSERTED)
+        DECLARE @trackingDepts nvarchar(256) = (
+          SELECT ',' + CAST(t.deptId as nvarchar(12))
+            FROM trackedMeasures t
+           WHERE t.tracked = 1 AND t.measureId = @measureId
+           ORDER BY deptId
+             FOR XML PATH('')
+        )
+        UPDATE measures
+        SET trackingDepts = @trackingDepts
+        WHERE id = @measureId
+      END
+    END
+HERE;
+
+
+
   const DROP_GROUPMEMBER_VIEW_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='groupMemberView' AND xtype='V')
       DROP VIEW groupMemberView
