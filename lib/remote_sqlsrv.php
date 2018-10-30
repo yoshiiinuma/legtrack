@@ -9,6 +9,39 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_TRACKING_DEPTS_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackingDeptsTrigger' AND xtype='TR')
+      DROP TRIGGER trackingDeptsTrigger
+HERE;
+
+  const CREATE_TRACKING_DEPTS_TRIGGER = <<<HERE
+    CREATE TRIGGER trackingDeptsTrigger ON trackedMeasures
+    AFTER INSERT, UPDATE
+    AS
+    BEGIN
+      SET NOCOUNT ON
+      IF UPDATE (tracked)
+      BEGIN
+        UPDATE measures
+        SET trackingDepts = y.trackingDepts
+        FROM measures m
+        INNER JOIN (
+          SELECT x.id, (
+            SELECT ',' + CAST (t.deptId as nvarchar(12))
+            FROM trackedMeasures t
+            WHERE t.tracked = 1
+              AND t.measureId = x.id
+            ORDER By t.deptId
+            FOR XML PATH('')
+          ) as trackingDepts
+          FROM measures x
+          WHERE x.id in (SELECT measureId FROM INSERTED GROUP BY measureId)
+        ) y ON m.id = y.Id
+      END
+    END
+HERE;
+
+
   const DROP_TRACKING_DEPTS_DELETE_TRIGGER = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='trackingDeptsTriggerOnDelete' AND xtype='TR')
       DROP TRIGGER trackingDeptsTriggerOnDelete
@@ -59,7 +92,7 @@ HERE;
             SELECT ',' + CAST (t.deptId as nvarchar(12))
             FROM trackedMeasures t
             WHERE t.tracked = 1
-              AND t.measureId = x.id 
+              AND t.measureId = x.id
             ORDER By t.deptId
             FOR XML PATH('')
           ) as trackingDepts
@@ -157,7 +190,7 @@ HERE;
               FROM trackedMeasures t
               WHERE t.tracked = 1 AND t.measureId = m.id
               ORDER BY t.deptId
-              FOR XML PATH('') 
+              FOR XML PATH('')
            )  as trackedBy
       FROM measures m
 HERE;
@@ -590,11 +623,11 @@ HERE;
    * Position:                [ Support, Oppose, Comments, No Position ]
    * TestimonyStatus:         [ Draft, Final, None ]
    * TestimonyApprovalStatus: [ Approved, Pending ]
-   * StaffComments: Archive of routed info 
+   * StaffComments: Archive of routed info
    *
    *
         committee nvarchar(128),         ==> measures (already have)
-        draftNo nvarchar(128),           ==> measures (scraper & uploader need to be updated), or TrackedMeasures temporarily 
+        draftNo nvarchar(128),           ==> measures (scraper & uploader need to be updated), or TrackedMeasures temporarily
         staffComments ntext,             ==> New Table
         route nvarchar(1024),            ==> No Need
         routeItem nvarchar(1024),
