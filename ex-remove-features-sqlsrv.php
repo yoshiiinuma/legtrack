@@ -38,6 +38,7 @@ $db->query(RemoteSqlsrv::DROP_GROUP_VIEW_SQL);
 $db->query(RemoteSqlsrv::DROP_GROUPMEMBER_VIEW_SQL);
 
 $db->query(RemoteSqlsrv::DROP_TRACKING_DEPTS_TRIGGER);
+$db->query(RemoteSqlsrv::DROP_TRACKING_DEPTS_DELETE_TRIGGER);
 ?>
 
 
