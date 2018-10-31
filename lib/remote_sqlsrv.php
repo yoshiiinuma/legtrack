@@ -9,6 +9,58 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_POSITIONS_LOG_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionsLogTrigger' AND xtype='TR')
+      DROP TRIGGER positionsLogTrigger
+HERE;
+
+  const CREATE_POSITIONS_LOG_TRIGGER = <<<HERE
+    CREATE TRIGGER positionsLogTrigger ON positions
+    AFTER UPDATE, DELETE
+    AS
+    BEGIN
+      SET NOCOUNT ON
+      DECLARE @now DATETIME = GETDATE()
+      INSERT INTO positionsHistory
+                  (year, deptId, measureId, groupId,
+                  [role], category, position, approvalStatus, status, assignedTo,
+                  version, createdBy, createdAt, modifiedBy, modifiedAt, loggedAt)
+           SELECT year, deptId, measureId, groupId,
+                  [role], category, position, approvalStatus, status, assignedTo,
+                  NEWID(), createdBy, createdAt, modifiedBy, modifiedAt, @now
+             FROM DELETED
+    END
+HERE;
+
+  const DROP_TRACKEDMEASURES_LOG_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasuresLogTrigger' AND xtype='TR')
+      DROP TRIGGER trackedMeasuresLogTrigger
+HERE;
+
+  const CREATE_TRACKEDMEASURES_LOG_TRIGGER = <<<HERE
+    CREATE TRIGGER trackedMeasuresLogTrigger ON trackedMeasures
+    AFTER UPDATE, DELETE
+    AS
+    BEGIN
+      SET NOCOUNT ON
+      DECLARE @now DATETIME = GETDATE()
+      INSERT INTO trackedMeasuresHistory
+                  (measureId, year, deptId, tracked,
+                  billProgress, scrNo, adminBill, dead, confirmed, passed, ccr,
+                  appropriation, appropriationAmount, report, directorAttention,
+                  govMsgNo, dateToGov, actDate, actNo, reportingRequirement, reportDueDate,
+                  sectionsAffected, effectiveDate, veto, vetoDate, vetoOverride, vetoOverrideDate,
+                  finalBill, version, createdBy, createdAt, modifiedBy, modifiedAt, loggedAt)
+           SELECT measureId, year, deptId, tracked,
+                  billProgress, scrNo, adminBill, dead, confirmed, passed, ccr,
+                  appropriation, appropriationAmount, report, directorAttention,
+                  govMsgNo, dateToGov, actDate, actNo, reportingRequirement, reportDueDate,
+                  sectionsAffected, effectiveDate, veto, vetoDate, vetoOverride, vetoOverrideDate,
+                  finalBill, version, createdBy, createdAt, modifiedBy, modifiedAt, @now
+             FROM DELETED
+    END
+HERE;
+
   const DROP_POSITION_UPDATE_TRIGGER = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positionUpdateTrigger' AND xtype='TR')
       DROP TRIGGER positionUpdateTrigger
@@ -738,6 +790,57 @@ HERE;
       )
 HERE;
 
+  const DROP_TRACKEDMEASURES_HISTORY_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasuresHistory' AND xtype='U')
+      DROP TABLE trackedMeasuresHistory
+HERE;
+
+  /**
+   * billProgress: [ 1st Lateral, 1st Decking, 2nd Lateral, 2nd Decking, 2nd Crossover, Final Decking ]
+   *
+   **/
+  const CREATE_TRACKEDMEASURES_HISTORY_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasuresHistory' AND xtype='U')
+      CREATE TABLE trackedMeasuresHistory
+      (
+        year smallint,
+        deptId smallint,
+        measureId int,
+        tracked bit,
+        billProgress nvarchar(18),
+        scrNo nvarchar(18),
+        adminBill bit,
+        dead bit,
+        confirmed bit,
+        passed bit,
+        ccr bit,
+        appropriation bit,
+        appropriationAmount nvarchar(256),
+        report bit,
+        directorAttention bit,
+        govMsgNo nvarchar(12),
+        dateToGov date,
+        actNo nvarchar(12),
+        actDate date,
+        reportingRequirement nvarchar(256),
+        reportDueDate nvarchar(12),
+        sectionsAffected nvarchar(128),
+        effectiveDate date,
+        veto bit,
+        vetoDate date,
+        vetoOverride bit,
+        vetoOverrideDate date,
+        finalBill nvarchar(128),
+        version nvarchar(48),
+        createdBy int,
+        createdAt datetime,
+        modifiedBy int,
+        modifiedAt datetime,
+        loggedAt datetime,
+        CONSTRAINT PK_trackedmeasures_history PRIMARY KEY CLUSTERED (year, deptId, measureId, loggedAt),
+      )
+HERE;
+
   const DROP_POSITIONS_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positions' AND xtype='U')
       DROP TABLE positions
@@ -783,6 +886,35 @@ HERE;
         CONSTRAINT PK_positions PRIMARY KEY CLUSTERED (year, deptId, measureId, groupId),
         INDEX IX_positions NONCLUSTERED (id),
         INDEX IX_positions_by_group NONCLUSTERED (groupId, year, deptId, measureId)
+      )
+HERE;
+
+  const DROP_POSITIONS_HISTORY_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionsHistory' AND xtype='U')
+      DROP TABLE positionsHistory
+HERE;
+
+  const CREATE_POSITIONS_HISTORY_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='positionsHistory' AND xtype='U')
+      CREATE TABLE positionsHistory
+      (
+        year smallint,
+        deptId smallint,
+        measureId int,
+        groupId int,
+        role nvarchar(12),
+        category nvarchar(12),
+        position nvarchar(12),
+        approvalStatus nvarchar(12),
+        status nvarchar(12),
+        assignedTo int,
+        version nvarchar(48),
+        createdBy int,
+        createdAt datetime,
+        modifiedBy int,
+        modifiedAt datetime,
+        loggedAt datetime,
+        CONSTRAINT PK_positions_history PRIMARY KEY CLUSTERED (year, deptId, groupId, measureId, loggedAt),
       )
 HERE;
 
