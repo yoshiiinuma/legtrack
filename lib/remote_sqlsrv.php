@@ -9,6 +9,111 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_POSITION_UPDATE_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionUpdateTrigger' AND xtype='TR')
+      DROP TRIGGER positionUpdateTrigger
+HERE;
+
+  const CREATE_POSITION_UPDATE_TRIGGER = <<<HERE
+    CREATE TRIGGER positionUpdateTrigger ON positions
+    INSTEAD OF UPDATE
+    AS
+    BEGIN
+      IF EXISTS (SELECT 1 FROM INSERTED i
+                 INNER JOIN positions t
+                         ON i.year = t.year
+                        AND i.deptId = t.deptId
+                        AND i.measureId = t.measureId
+                        AND i.groupId = t.groupId
+                        AND t.version <> i.version)
+      BEGIN
+        RAISERROR('INVALID VERSION: You tried to update an old position record', 1, 1)
+        ROLLBACK TRANSACTION
+      END
+      ELSE
+      BEGIN
+        DECLARE @now DATETIME = GETDATE()
+        UPDATE positions
+           SET role = i.role,
+               category = i.category,
+               position = i.position,
+               approvalStatus = i.approvalStatus,
+               status = i.status,
+               assignedTo = i.assignedTo,
+               version = NEWID(),
+               modifiedBy = i.modifiedBy,
+               modifiedAt = @now
+          FROM positions t
+          INNER JOIN INSERTED i
+                  ON i.year = t.year
+                 AND i.deptId = t.deptId
+                 AND i.measureId = t.measureId
+                 AND i.groupId = t.groupId
+      END
+    END
+HERE;
+
+  const DROP_TRACKEDMEASURE_UPDATE_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasureUpdateTrigger' AND xtype='TR')
+      DROP TRIGGER trackedMeasureUpdateTrigger
+HERE;
+
+  const CREATE_TRACKEDMEASURE_UPDATE_TRIGGER = <<<HERE
+    CREATE TRIGGER trackedMeasureUpdateTrigger ON trackedMeasures
+    INSTEAD OF UPDATE
+    AS
+    BEGIN
+      IF EXISTS (SELECT 1 FROM INSERTED i
+                 INNER JOIN trackedMeasures t
+                         ON i.year = t.year
+                        AND i.deptId = t.deptId
+                        AND i.measureId = t.measureId
+                        AND t.version <> i.version)
+      BEGIN
+        RAISERROR('INVALID VERSION: You tried to update an old trackedMeasure record', 1, 1)
+        ROLLBACK TRANSACTION
+      END
+      ELSE
+      BEGIN
+        DECLARE @now DATETIME = GETDATE()
+        UPDATE trackedMeasures
+           SET tracked = i.tracked,
+               billProgress = i.billProgress,
+               scrNo = i.scrNo,
+               adminBill = i.adminBill,
+               dead = i.dead,
+               confirmed = i.confirmed,
+               passed = i.passed,
+               ccr = i.ccr,
+               appropriation = i.appropriation,
+               appropriationAmount = i.appropriationAmount,
+               report = i.report,
+               directorAttention = i.directorAttention,
+               govMsgNo = i.govMsgNo,
+               dateToGov = i.dateToGov,
+               actDate = i.actDate,
+               actNo = i.actNo,
+               reportingRequirement = i.reportingRequirement,
+               reportDueDate = i.reportDueDate,
+               sectionsAffected = i.sectionsAffected,
+               effectiveDate = i.effectiveDate,
+               veto = i.veto,
+               vetoDate = i.vetoDate,
+               vetoOverride = i.vetoOverride,
+               vetoOverrideDate = i.vetoOverrideDate,
+               finalBill = i.finalBill,
+               version = NEWID(),
+               modifiedBy = i.modifiedBy,
+               modifiedAt = @now
+          FROM trackedMeasures t
+         INNER JOIN INSERTED i
+                 ON i.year = t.year
+                AND i.deptId = t.deptId
+                AND i.measureId = t.measureId
+      END
+    END
+HERE;
+
   const DROP_POSITION_INSERT_TRIGGER = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positionInsertTrigger' AND xtype='TR')
       DROP TRIGGER positionInsertTrigger
@@ -619,7 +724,7 @@ HERE;
         vetoOverride bit DEFAULT 0,
         vetoOverrideDate date,
         finalBill nvarchar(128),
-        version nvarchar(128),
+        version nvarchar(48),
         createdBy int,
         createdAt datetime,
         modifiedBy int,
@@ -666,7 +771,7 @@ HERE;
         approvalStatus nvarchar(12),
         status nvarchar(12),
         assignedTo int,
-        version nvarchar(128),
+        version nvarchar(48),
         createdBy int,
         createdAt datetime,
         modifiedBy int,
