@@ -23,8 +23,8 @@ $db = new RemoteSqlsrv();
 $db->configure($GLOBALS);
 $db->connect();
 
-$db->query(RemoteSqlsrv::DROP_POSITION_BOOKMARKS_TABLE_SQL);
-$db->query(RemoteSqlsrv::DROP_MEASURE_BOOKMARKS_TABLE_SQL);
+#$db->query(RemoteSqlsrv::DROP_POSITION_BOOKMARKS_TABLE_SQL);
+#$db->query(RemoteSqlsrv::DROP_MEASURE_BOOKMARKS_TABLE_SQL);
 
 $db->query(RemoteSqlsrv::DROP_COMMENTS_TABLE_SQL);
 

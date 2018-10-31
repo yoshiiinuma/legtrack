@@ -33,8 +33,8 @@ $db->query(RemoteSqlsrv::CREATE_TRACKEDMEASURES_TABLE_SQL);
 $db->query(RemoteSqlsrv::CREATE_POSITIONS_TABLE_SQL);
 $db->query(RemoteSqlsrv::CREATE_COMMENTS_TABLE_SQL);
 
-$db->query(RemoteSqlsrv::CREATE_POSITION_BOOKMARKS_TABLE_SQL);
-$db->query(RemoteSqlsrv::CREATE_MEASURE_BOOKMARKS_TABLE_SQL);
+#$db->query(RemoteSqlsrv::CREATE_POSITION_BOOKMARKS_TABLE_SQL);
+#$db->query(RemoteSqlsrv::CREATE_MEASURE_BOOKMARKS_TABLE_SQL);
 
 ?>
 

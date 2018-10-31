@@ -936,38 +936,6 @@ HERE;
       )
 HERE;
 
-  const DROP_POSITION_BOOKMARKS_TABLE_SQL = <<<HERE
-    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionBookmarks' AND xtype='U')
-      DROP TABLE positionBookmarks
-HERE;
-
-  const CREATE_POSITION_BOOKMARKS_TABLE_SQL = <<<HERE
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='positionBookmarks' AND xtype='U')
-      CREATE TABLE positionBookmarks
-      (
-        year smallint NOT NULL,
-        userId int NOT NULL FOREIGN KEY REFERENCES users(id),
-        positionId int NOT NULL FOREIGN KEY REFERENCES positions(id),
-        CONSTRAINT PK_positionbookmarks PRIMARY KEY CLUSTERED (year, userId, positionId)
-      )
-HERE;
-
-  const DROP_MEASURE_BOOKMARKS_TABLE_SQL = <<<HERE
-    IF EXISTS (SELECT * FROM sysobjects WHERE name='measureBookmarks' AND xtype='U')
-      DROP TABLE measureBookmarks
-HERE;
-
-  const CREATE_MEASURE_BOOKMARKS_TABLE_SQL = <<<HERE
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='measureBookmarks' AND xtype='U')
-      CREATE TABLE measureBookmarks
-      (
-        year smallint NOT NULL,
-        userId int NOT NULL FOREIGN KEY REFERENCES users(id),
-        trackedMeasureId int NOT NULL FOREIGN KEY REFERENCES trackedMeasures(id),
-        CONSTRAINT PK_measurebookmarks PRIMARY KEY CLUSTERED (year, userId, trackedMeasureId)
-      )
-HERE;
-
   const DROP_HEARINGS_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='hearings' AND xtype='U')
       DROP TABLE hearings
