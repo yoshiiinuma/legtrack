@@ -32,6 +32,7 @@ HERE;
       END
       ELSE
       BEGIN
+        SET NOCOUNT ON
         DECLARE @now DATETIME = GETDATE()
         UPDATE positions
            SET role = i.role,
@@ -75,6 +76,7 @@ HERE;
       END
       ELSE
       BEGIN
+        SET NOCOUNT ON
         DECLARE @now DATETIME = GETDATE()
         UPDATE trackedMeasures
            SET tracked = i.tracked,
@@ -124,6 +126,7 @@ HERE;
     INSTEAD OF INSERT
     AS
     BEGIN
+      SET NOCOUNT ON
       DECLARE @now DATETIME = GETDATE()
       INSERT INTO positions
                   (year, deptId, measureId, groupId,
@@ -146,6 +149,7 @@ HERE;
     INSTEAD OF INSERT
     AS
     BEGIN
+      SET NOCOUNT ON
       DECLARE @now DATETIME = GETDATE()
       INSERT INTO trackedMeasures
                   (measureId, year, deptId, tracked,
