@@ -9,38 +9,55 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
-  const DROP_TRACKING_DEPTS_TRIGGER = <<<HERE
-    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackingDeptsTrigger' AND xtype='TR')
-      DROP TRIGGER trackingDeptsTrigger
+  const DROP_POSITION_INSERT_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='positionInsertTrigger' AND xtype='TR')
+      DROP TRIGGER positionInsertTrigger
 HERE;
 
-  const CREATE_TRACKING_DEPTS_TRIGGER = <<<HERE
-    CREATE TRIGGER trackingDeptsTrigger ON trackedMeasures
-    AFTER INSERT, UPDATE
+  const CREATE_POSITION_INSERT_TRIGGER = <<<HERE
+    CREATE TRIGGER positionInsertTrigger ON positions
+    INSTEAD OF INSERT
     AS
     BEGIN
-      SET NOCOUNT ON
-      IF UPDATE (tracked)
-      BEGIN
-        UPDATE measures
-        SET trackingDepts = y.trackingDepts
-        FROM measures m
-        INNER JOIN (
-          SELECT x.id, (
-            SELECT ',' + CAST (t.deptId as nvarchar(12))
-            FROM trackedMeasures t
-            WHERE t.tracked = 1
-              AND t.measureId = x.id
-            ORDER By t.deptId
-            FOR XML PATH('')
-          ) as trackingDepts
-          FROM measures x
-          WHERE x.id in (SELECT measureId FROM INSERTED GROUP BY measureId)
-        ) y ON m.id = y.Id
-      END
+      DECLARE @now DATETIME = GETDATE()
+      INSERT INTO positions
+                  (year, deptId, measureId, groupId,
+                  [role], category, position, approvalStatus, status, assignedTo,
+                  version, createdBy, createdAt, modifiedBy, modifiedAt)
+           SELECT year, deptId, measureId, groupId,
+                  [role], category, position, approvalStatus, status, assignedTo,
+                  NEWID(), createdBy, @now, modifiedBy, @now
+             FROM INSERTED
     END
 HERE;
 
+  const DROP_TRACKEDMEASURE_INSERT_TRIGGER = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasureInsertTrigger' AND xtype='TR')
+      DROP TRIGGER trackedMeasureInsertTrigger
+HERE;
+
+  const CREATE_TRACKEDMEASURE_INSERT_TRIGGER = <<<HERE
+    CREATE TRIGGER trackedMeasureInsertTrigger ON trackedMeasures
+    INSTEAD OF INSERT
+    AS
+    BEGIN
+      DECLARE @now DATETIME = GETDATE()
+      INSERT INTO trackedMeasures
+                  (measureId, year, deptId, tracked,
+                  billProgress, scrNo, adminBill, dead, confirmed, passed, ccr,
+                  appropriation, appropriationAmount, report, directorAttention,
+                  govMsgNo, dateToGov, actDate, actNo, reportingRequirement, reportDueDate,
+                  sectionsAffected, effectiveDate, veto, vetoDate, vetoOverride, vetoOverrideDate,
+                  finalBill, version, createdBy, createdAt, modifiedBy, modifiedAt)
+           SELECT measureId, year, deptId, tracked,
+                  billProgress, scrNo, adminBill, dead, confirmed, passed, ccr,
+                  appropriation, appropriationAmount, report, directorAttention,
+                  govMsgNo, dateToGov, actDate, actNo, reportingRequirement, reportDueDate,
+                  sectionsAffected, effectiveDate, veto, vetoDate, vetoOverride, vetoOverrideDate,
+                  finalBill, NEWID(), createdBy, @now, modifiedBy, @now
+             FROM INSERTED
+    END
+HERE;
 
   const DROP_TRACKING_DEPTS_DELETE_TRIGGER = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='trackingDeptsTriggerOnDelete' AND xtype='TR')
