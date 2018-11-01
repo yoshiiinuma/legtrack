@@ -43,6 +43,10 @@ $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_INSERT_TRIGGER);
 $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_UPDATE_TRIGGER);
 $db->query(RemoteSqlsrv::DROP_POSITION_INSERT_TRIGGER);
 $db->query(RemoteSqlsrv::DROP_POSITION_UPDATE_TRIGGER);
+
+$db->query(RemoteSqlsrv::DROP_TAGGED_MEASURES_TABLE_SQL);
+$db->query(RemoteSqlsrv::DROP_TAGS_TABLE_SQL);
+
 ?>
 
 

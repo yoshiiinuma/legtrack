@@ -9,6 +9,40 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_TAGGED_MEASURES_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='taggedMeasures' AND xtype='U')
+      DROP TABLE taggedMeasures
+HERE;
+
+  const CREATE_TAGGED_MEASURES_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='taggedMeasures' AND xtype='U')
+      CREATE TABLE taggedMeasures
+      (
+        year smallint NOT NULL,
+        deptId int NOT NULL FOREIGN KEY REFERENCES users(id),
+        tagId int NOT NULL FOREIGN KEY REFERENCES tags(id),
+        trackedMeasureId int NOT NULL FOREIGN KEY REFERENCES trackedMeasures(id),
+        CONSTRAINT PK_taggedmeasures PRIMARY KEY CLUSTERED (year, deptId, tagId, trackedMeasureId)
+      )
+HERE;
+
+  const DROP_TAGS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='tags' AND xtype='U')
+      DROP TABLE tags
+HERE;
+
+  const CREATE_TAGS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='tags' AND xtype='U')
+      CREATE TABLE tags
+      (
+        id int identity(1,1),
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
+        tag nvarchar(64) NOT NULL,
+        CONSTRAINT PK_tags PRIMARY KEY CLUSTERED (id),
+        INDEX IX_tags_by_dept NONCLUSTERED (deptId, id)
+      )
+HERE;
+
   const DROP_POSITIONS_LOG_TRIGGER = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positionsLogTrigger' AND xtype='TR')
       DROP TRIGGER positionsLogTrigger
