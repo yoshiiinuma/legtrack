@@ -19,10 +19,12 @@ HERE;
       CREATE TABLE taggedMeasures
       (
         year smallint NOT NULL,
-        deptId int NOT NULL FOREIGN KEY REFERENCES users(id),
+        deptId smallint NOT NULL,
+        measureId int NOT NULL,
         tagId int NOT NULL FOREIGN KEY REFERENCES tags(id),
         trackedMeasureId int NOT NULL FOREIGN KEY REFERENCES trackedMeasures(id),
-        CONSTRAINT PK_taggedmeasures PRIMARY KEY CLUSTERED (year, deptId, tagId, trackedMeasureId)
+        CONSTRAINT PK_taggedmeasures PRIMARY KEY CLUSTERED (year, deptId, measureId, tagId),
+        CONSTRAINT FK_taggedmeasures FOREIGN KEY (year, deptId, measureId) REFERENCES trackedMeasures (year, deptId, measureId)
       )
 HERE;
 
