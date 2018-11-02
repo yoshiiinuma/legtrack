@@ -388,6 +388,49 @@ HERE;
       JOIN measures m ON m.id = t.measureId
 HERE;
 
+  const DROP_INTEGRATED_MEASURE_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='integratedMeasureView' AND xtype='V')
+      DROP VIEW integratedMeasureView
+HERE;
+
+  const CREATE_INTEGRATED_MEASURE_VIEW_SQL = <<<HERE
+    CREATE VIEW integratedMeasureView AS
+    SELECT t.id, t.measureId, m.year, t.deptId, t.tracked,
+           CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
+           m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+           m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status as measureStatus,
+           m.introducer, m.currentReferral as committee, m.companion,
+           t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
+           t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
+           t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
+           t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate,
+           t.finalBill, t.version,
+      STUFF((
+         SELECT ',' + y.tag
+         FROM trackedMeasures a
+        LEFT JOIN taggedMeasures x
+                ON x.trackedMeasureId = a.id
+                 AND x.trackedMeasureId = t.id
+          INNER JOIN tags y
+                ON y.id = x.tagId
+            FOR XML PATH('')
+      ), 1, 1, '') as tags,
+      STUFF((
+        SELECT ';' + CAST(p.id as varchar(12)) + ',' + CAST(p.groupId as varchar(12)) + ',' + k.groupName + ',' + ISNULL(p.position,'') + ',' + ISNULL(p.role,'') + ',' + ISNULL(p.approvalStatus,'')
+         FROM trackedMeasures b
+         LEFT JOIN positions p
+                ON p.year = b.year
+               AND p.deptId = b.deptId
+               AND p.measureId = b.measureId
+               AND b.id = t.id
+         INNER JOIN groups k
+                 ON k.id = p.groupId
+           FOR XML PATH('')
+      ), 1, 1, '') as positions
+      from trackedMeasures t
+      JOIN measures m ON m.id = t.measureId
+HERE;
+
   const DROP_MEASURE_VIEW_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='measureView' AND xtype='V')
       DROP VIEW measureView

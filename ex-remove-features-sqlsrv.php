@@ -36,6 +36,7 @@ $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_VIEW_SQL);
 $db->query(RemoteSqlsrv::DROP_POSITION_VIEW_SQL);
 $db->query(RemoteSqlsrv::DROP_GROUP_VIEW_SQL);
 $db->query(RemoteSqlsrv::DROP_GROUPMEMBER_VIEW_SQL);
+$db->query(RemoteSqlsrv::DROP_INTEGRATED_MEASURE_VIEW_SQL);
 
 $db->query(RemoteSqlsrv::DROP_TRACKING_DEPTS_TRIGGER);
 $db->query(RemoteSqlsrv::DROP_TRACKING_DEPTS_DELETE_TRIGGER);
@@ -43,9 +44,6 @@ $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_INSERT_TRIGGER);
 $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_UPDATE_TRIGGER);
 $db->query(RemoteSqlsrv::DROP_POSITION_INSERT_TRIGGER);
 $db->query(RemoteSqlsrv::DROP_POSITION_UPDATE_TRIGGER);
-
-$db->query(RemoteSqlsrv::DROP_TAGGED_MEASURES_TABLE_SQL);
-$db->query(RemoteSqlsrv::DROP_TAGS_TABLE_SQL);
 
 ?>
 
