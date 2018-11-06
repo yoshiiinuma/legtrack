@@ -278,7 +278,7 @@ HERE;
             AND t.measureId = x.id
           ORDER By t.deptId
           FOR XML PATH('')
-        ) as trackingDepts
+        ) + ',' as trackingDepts
         FROM measures x
         WHERE x.id in (SELECT measureId FROM DELETED GROUP BY measureId)
       ) y ON m.id = y.Id
@@ -309,7 +309,7 @@ HERE;
               AND t.measureId = x.id
             ORDER By t.deptId
             FOR XML PATH('')
-          ) as trackingDepts
+          ) + ',' as trackingDepts
           FROM measures x
           WHERE x.id in (SELECT measureId FROM INSERTED GROUP BY measureId)
         ) y ON m.id = y.Id
