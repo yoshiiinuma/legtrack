@@ -808,12 +808,14 @@ HERE;
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='groupMembers' AND xtype='U')
       CREATE TABLE groupMembers
       (
+        id int identity(1,1) NOT NULL UNIQUE,
         userId int NOT NULL FOREIGN KEY REFERENCES users(id),
         groupId int NOT NULL FOREIGN KEY REFERENCES groups(id),
         roleId tinyint NOT NULL FOREIGN KEY REFERENCES roles(id),
         permission tinyint NOT NULL
         CONSTRAINT PK_groupmembers PRIMARY KEY CLUSTERED (userId, groupId, roleId, permission),
-        INDEX IX_groupmembers_by_group NONCLUSTERED (groupId, userId)
+        INDEX IX_groupmembers_by_group NONCLUSTERED (groupId, userId),
+        INDEX IX_groupmembers_id NONCLUSTERED (id)
       )
 HERE;
 
