@@ -23,6 +23,9 @@ $db = new RemoteSqlsrv();
 $db->configure($GLOBALS);
 $db->connect();
 
+$db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_BULKUPSERT_PROC);
+$db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_DATA_PARSE_FUNCTION);
+
 $db->query(RemoteSqlsrv::DROP_TRACKEDMEASURE_PAGE_SQL);
 $db->query(RemoteSqlsrv::DROP_MEASURE_PAGE_SQL);
 $db->query(RemoteSqlsrv::DROP_MEASURE_SEARCH_PAGE_SQL);

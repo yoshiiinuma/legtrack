@@ -9,6 +9,110 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_TRACKEDMEASURE_DATA_PARSE_FUNCTION = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='parseTrackedMeasureBulkUpsertData' AND xtype='TF')
+      DROP FUNCTION parseTrackedMeasureBulkUpsertData
+HERE;
+
+  const CREATE_TRACKEDMEASURE_DATA_PARSE_FUNCTION = <<<HERE
+    CREATE FUNCTION parseTrackedMeasureBulkUpsertData ( @str VARCHAR(MAX) )
+      RETURNS
+        @results TABLE (
+          measureId int,
+        tracked bit,
+        version nvarchar(48)
+        )
+      AS
+      BEGIN
+        DECLARE @measureId NVARCHAR(15);
+        DECLARE @tracked NVARCHAR(1);
+        DECLARE @version NVARCHAR(48);
+        DECLARE @i int;
+
+        WHILE CHARINDEX(';', @str) > 0
+        BEGIN
+          SELECT @i = CHARINDEX(',', @str);
+          SELECT @measureId = CAST(SUBSTRING(@str, 1, @i - 1) AS int);
+          SELECT @str = SUBSTRING(@str, @i+1, LEN(@str) - @i);
+
+          SELECT @i = CHARINDEX(',', @str);
+          SELECT @tracked = CAST(SUBSTRING(@str, 1, @i - 1) AS bit);
+          SELECT @str = SUBSTRING(@str, @i+1, LEN(@str) - @i);
+
+          SELECT @i = CHARINDEX(';', @str);
+          SELECT @version = SUBSTRING(@str, 1, @i - 1);
+          SELECT @str = SUBSTRING(@str, @i+1, LEN(@str) - @i);
+
+          INSERT INTO @results (measureId, tracked, version)
+          VALUES (@measureId, @tracked, @version);
+        END
+
+        IF LEN(@str) > 0
+        BEGIN
+          SELECT @i = CHARINDEX(',', @str);
+          SELECT @measureId = CAST(SUBSTRING(@str, 1, @i - 1) AS int);
+          SELECT @str = SUBSTRING(@str, @i+1, LEN(@str) - @i);
+
+          SELECT @i = CHARINDEX(',', @str);
+          SELECT @tracked = CAST(SUBSTRING(@str, 1, @i - 1) AS bit);
+          SELECT @str = SUBSTRING(@str, @i+1, LEN(@str) - @i);
+
+          SELECT @version = @str;
+
+          INSERT INTO @results (measureId, tracked, version)
+          VALUES (@measureId, @tracked, @version);
+        END
+      RETURN
+    END
+HERE;
+
+  const DROP_TRACKEDMEASURE_BULKUPSERT_PROC = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasureBulkUpsert' AND xtype='P')
+      DROP PROCEDURE trackedMeasureBulkUpsert
+HERE;
+
+  const CREATE_TRACKEDMEASURE_BULKUPSERT_PROC = <<<HERE
+    CREATE PROCEDURE trackedMeasureBulkUpsert
+      (
+        @year smallint,
+      @deptId int,
+      @userId int,
+        @str varchar(MAX)
+      )
+      AS
+      BEGIN
+        DECLARE @temp TABLE (
+        year      smallint,
+        deptId    int,
+          measureId int,
+          tracked   bit,
+          version nvarchar(48),
+        createdBy int,
+        modifiedBy int
+        )
+      INSERT INTO @temp
+      SELECT @year as year, @deptId as deptId, measureId, tracked, version, @userId as createdBy, @userId as modifiedBy 
+        FROM parseTrackedMeasureBulkUpsertData(@str);
+
+      MERGE INTO trackedMeasures m
+      USING @temp t
+         ON t.year = m.year
+        AND t.deptId = m.deptId
+        AND t.measureId = m.measureId
+      WHEN MATCHED
+      THEN UPDATE
+         SET tracked = t.tracked,
+             version = t.version,
+           modifiedBy = t.modifiedBy
+      WHEN NOT MATCHED BY TARGET
+      THEN INSERT (year, deptId, measureId, tracked, createdBy, modifiedBy)
+           VALUES (t.year, t.deptId, t.measureId, t.tracked, t.createdBy, t.modifiedBy);
+      END
+HERE;
+
+
+
+
   const DROP_TAGGED_MEASURES_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='taggedMeasures' AND xtype='U')
       DROP TABLE taggedMeasures
@@ -568,8 +672,6 @@ HERE;
          FETCH NEXT @size ROWS ONLY;
       END
 HERE;
-
-
 
   const DROP_TRACKEDMEASURE_PAGE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='trackedMeasurePage' AND xtype='P')
