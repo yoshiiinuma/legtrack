@@ -428,7 +428,7 @@ HERE;
 
   const CREATE_GROUPMEMBER_VIEW_SQL = <<<HERE
     CREATE VIEW groupMemberView AS
-    SELECT m.userId, m.groupId, g.deptId, d.deptName, g.groupName, u.displayName, u.userPrincipalName, m.roleId, r.title, r.permission
+    SELECT m.id, m.userId, m.groupId, g.deptId, d.deptName, g.groupName, u.displayName, u.userPrincipalName, m.roleId, r.title, r.permission
       FROM groupMembers m
       JOIN users u ON u.id = m.userId
       JOIN groups g ON g.id = m.groupId
