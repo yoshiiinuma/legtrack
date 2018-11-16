@@ -547,11 +547,11 @@ HERE;
            m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
            m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
            m.introducer, m.currentReferral as committee, m.companion,
-           (SELECT ',' + CAST(t.deptId as nvarchar(12))
+           ((SELECT ',' + CAST(t.deptId as nvarchar(12))
               FROM trackedMeasures t
               WHERE t.tracked = 1 AND t.measureId = m.id
               ORDER BY t.deptId
-              FOR XML PATH('')
+              FOR XML PATH('')) + ','
            )  as trackedBy
       FROM measures m
 HERE;
