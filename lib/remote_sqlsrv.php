@@ -455,8 +455,8 @@ HERE;
 
   const CREATE_POSITION_VIEW_SQL = <<<HERE
     CREATE VIEW positionView AS
-    SELECT p.id as positionId, t.id as trakedMeasureId, t.measureId, t.year, t.deptId, p.groupId,
-           t.tracked, p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo,
+    SELECT p.id as positionId, t.id as trackedMeasureId, t.measureId, t.year, t.deptId, p.groupId, g.groupName,
+           t.tracked, p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo, u.userPrincipalName as assigneePrincipalName, u.displayName as assignee,
            t.billId, t.measureType, t.measureNumber, t.code, t.measurePdfUrl, t.measureArchiveUrl,
            t.measureTitle, t.reportTitle, t.bitAppropriation, t.description, t.measureStatus,
            t.introducer, t.committee, t.companion,
@@ -469,6 +469,8 @@ HERE;
       JOIN positions p ON p.year = t.year
                       AND p.deptId = t.deptId
                       AND p.measureId = t.measureId
+      JOIN groups g on g.id = p.groupId
+      JOIN users u on u.id = p.assignedTo
 HERE;
 
   const DROP_TRACKEDMEASURE_VIEW_SQL = <<<HERE
