@@ -470,7 +470,7 @@ HERE;
                       AND p.deptId = t.deptId
                       AND p.measureId = t.measureId
       JOIN groups g on g.id = p.groupId
-      JOIN users u on u.id = p.assignedTo
+      LEFT JOIN users u on u.id = p.assignedTo
 HERE;
 
   const DROP_TRACKEDMEASURE_VIEW_SQL = <<<HERE
