@@ -489,7 +489,7 @@ HERE;
            t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
            t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
            t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate,
-           t.finalBill, t.version
+           t.finalBill, t.version, 1 as rowcnt
       FROM trackedMeasures t
       JOIN measures m ON m.id = t.measureId
 HERE;
