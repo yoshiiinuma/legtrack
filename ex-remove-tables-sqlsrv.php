@@ -26,6 +26,8 @@ $db->connect();
 #$db->query(RemoteSqlsrv::DROP_POSITION_BOOKMARKS_TABLE_SQL);
 #$db->query(RemoteSqlsrv::DROP_MEASURE_BOOKMARKS_TABLE_SQL);
 
+$db->query(RemoteSqlsrv::DROP_KEYWORDS_TABLE_SQL);
+
 $db->query(RemoteSqlsrv::DROP_TAGGED_MEASURES_TABLE_SQL);
 $db->query(RemoteSqlsrv::DROP_TAGS_TABLE_SQL);
 

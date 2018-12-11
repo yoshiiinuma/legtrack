@@ -9,6 +9,23 @@ class RemoteSqlsrv extends DbBase {
   private $dsn;
   private $dbname;
 
+  const DROP_KEYWORDS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='keywords' AND xtype='U')
+      DROP TABLE keywords
+HERE;
+
+  const CREATE_KEYWORDS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='keywords' AND xtype='U')
+      CREATE TABLE keywords
+      (
+        id int identity(1,1),
+        groupId int NOT NULL FOREIGN KEY REFERENCES groups(id),
+        keyword nvarchar(128) NOT NULL,
+        CONSTRAINT PK_keywords PRIMARY KEY CLUSTERED (id),
+        INDEX IX_tags_by_group NONCLUSTERED (groupId, id)
+      )
+HERE;
+
   const DROP_TRACKEDMEASURE_DATA_PARSE_FUNCTION = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='parseTrackedMeasureBulkUpsertData' AND xtype='TF')
       DROP FUNCTION parseTrackedMeasureBulkUpsertData
@@ -19,8 +36,8 @@ HERE;
       RETURNS
         @results TABLE (
           measureId int,
-        tracked bit,
-        version nvarchar(48)
+          tracked bit,
+          version nvarchar(48)
         )
       AS
       BEGIN

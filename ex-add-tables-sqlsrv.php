@@ -39,6 +39,7 @@ $db->query(RemoteSqlsrv::CREATE_COMMENTS_TABLE_SQL);
 $db->query(RemoteSqlsrv::CREATE_TAGS_TABLE_SQL);
 $db->query(RemoteSqlsrv::CREATE_TAGGED_MEASURES_TABLE_SQL);
 
+$db->query(RemoteSqlsrv::CREATE_KEYWORDS_TABLE_SQL);
 ?>
 
 
