@@ -19,10 +19,10 @@ HERE;
       CREATE TABLE keywords
       (
         id int identity(1,1),
-        groupId int NOT NULL FOREIGN KEY REFERENCES groups(id),
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
         keyword nvarchar(128) NOT NULL,
         CONSTRAINT PK_keywords PRIMARY KEY CLUSTERED (id),
-        INDEX IX_tags_by_group NONCLUSTERED (groupId, id)
+        INDEX IX_keywords_by_dept NONCLUSTERED (deptId, id)
       )
 HERE;
 
