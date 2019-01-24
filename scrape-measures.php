@@ -158,22 +158,27 @@ $updatedNumber = 0;
 $updated = FALSE;
 
 foreach ($measureTypes as $type => $val) {
-  $startedAt = new DateTime();
+  try {
+    $startedAt = new DateTime();
 
-  $scrapeRslt = checkCapitolSiteUpdate($year, $type, $dbg);
-  Logger::logger()->info($pg . $year . ' ' . $type . " : " . $scrapeRslt->status . " => " . $scrapeRslt->dst . ' ' . $scrapeRslt->elapsed);
+    $scrapeRslt = checkCapitolSiteUpdate($year, $type, $dbg);
+    Logger::logger()->info($pg . $year . ' ' . $type . " : " . $scrapeRslt->status . " => " . $scrapeRslt->dst . ' ' . $scrapeRslt->elapsed);
 
-  if ($scrapeRslt->status == 'UPDATED') {
-    $dbRslt = updateLocalDb($db, $year, $type, $scrapeRslt);
-    Logger::logger()->info($pg . $year . ' ' . $type . ' UPDATED ' . $dbRslt->updatedNumber . '/' . $dbRslt->totalNumber . " Rows " . $dbRslt->elapsed);
-    $totalNumber += $dbRslt->totalNumber;
-    $updatedNumber += $dbRslt->updatedNumber;
-    if ($dbRslt->updated) $updated = TRUE;
-    $db->insertScraperLog($jobId, $type, $jobStatus->completed, $startedAt->getTimestamp(),
-      $dbRslt->totalNumber, $dbRslt->updatedNumber);
-  } else {
-    $db->insertScraperLog($jobId, $type, $jobStatus->skipped, $startedAt->getTimestamp(), 0, 0);
-    Logger::logger()->info($pg . $year . ' ' . $type . ' SKIPPED');
+    if ($scrapeRslt->status == 'UPDATED') {
+      $dbRslt = updateLocalDb($db, $year, $type, $scrapeRslt);
+      Logger::logger()->info($pg . $year . ' ' . $type . ' UPDATED ' . $dbRslt->updatedNumber . '/' . $dbRslt->totalNumber . " Rows " . $dbRslt->elapsed);
+      $totalNumber += $dbRslt->totalNumber;
+      $updatedNumber += $dbRslt->updatedNumber;
+      if ($dbRslt->updated) $updated = TRUE;
+      $db->insertScraperLog($jobId, $type, $jobStatus->completed, $startedAt->getTimestamp(),
+        $dbRslt->totalNumber, $dbRslt->updatedNumber);
+    } else {
+      $db->insertScraperLog($jobId, $type, $jobStatus->skipped, $startedAt->getTimestamp(), 0, 0);
+      Logger::logger()->info($pg . $year . ' ' . $type . ' SKIPPED');
+    }
+  } catch (Exception $e) {
+    Logger::logger()->error($pg . $year . ' ' . $type);
+    Logger::logger()->error($e->getMessage());
   }
 }
 

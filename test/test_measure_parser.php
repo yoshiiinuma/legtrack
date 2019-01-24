@@ -119,13 +119,20 @@ function testFile($file, $strict) {
   print 'End Testing ' . $file . PHP_EOL;
 }
 
-$file1 = "test/data/2018_gm.html";
-$file2 = "test/data/2018_hb.html";
-$file3 = "test/data/2018_hcr.html";
-$file4 = "test/data/2018_hr.html";
-$file5 = "test/data/2018_sb.html";
-$file6 = "test/data/2018_scr.html";
-$file7 = "test/data/2018_sr.html";
+//$file1 = "test/data/2018_gm.html";
+//$file2 = "test/data/2018_hb.html";
+//$file3 = "test/data/2018_hcr.html";
+//$file4 = "test/data/2018_hr.html";
+//$file5 = "test/data/2018_sb.html";
+//$file6 = "test/data/2018_scr.html";
+//$file7 = "test/data/2018_sr.html";
+$file1 = "test/data/2019_gm.html";
+$file2 = "test/data/2019_hb.html";
+$file3 = "test/data/2019_hcr.html";
+$file4 = "test/data/2019_hr.html";
+$file5 = "test/data/2019_sb.html";
+$file6 = "test/data/2019_scr.html";
+$file7 = "test/data/2019_sr.html";
 
 testFile($file1, false);
 testFile($file2, true);
