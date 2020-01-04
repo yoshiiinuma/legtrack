@@ -17,6 +17,7 @@ class DbBase {
   protected $selectUpdatedMeasuresSql;
   protected $selectUpdatedHearingsSql;
   protected $selectMeasuresByTimeSql;
+  protected $selectHearingsByTimeSql;
   protected $insertHearingSql;
   protected $upsertHearingSql;
 
@@ -151,6 +152,12 @@ HERE;
   const SELECT_UPDATED_HEARINGS_SQL = <<<HERE
      SELECT * FROM hearings
       WHERE lastUpdated >= :lastUpdated;
+HERE;
+
+  const SELECT_HEARINGS_BY_TIME_SQL = <<<HERE
+     SELECT * FROM hearings
+      WHERE lastUpdated >= :startTime
+        AND lastUpdated <= :endTime;
 HERE;
 
   const INSERT_HEARING_SQL = <<<HERE
@@ -305,11 +312,13 @@ HERE;
       $this->selectMeasureSql = $this->prepare(static::SELECT_MEASURE_SQL);
       if (!$this->selectMeasureSql) { die('SELECT Measure SQL Preparation Failed' . PHP_EOL); }
       $this->selectUpdatedMeasuresSql = $this->prepare(static::SELECT_UPDATED_MEASURES_SQL);
-      if (!$this->selectUpdatedMeasuresSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
+      if (!$this->selectUpdatedMeasuresSql) { die('SELECT Updated Measures SQL Preparation Failed' . PHP_EOL); }
       $this->selectMeasuresByTimeSql = $this->prepare(static::SELECT_MEASURES_BY_TIME_SQL);
-      if (!$this->selectMeasuresByTimeSql) { die('SELECT ByTime SQL Preparation Failed' . PHP_EOL); }
+      if (!$this->selectMeasuresByTimeSql) { die('SELECT Measures By Time SQL Preparation Failed' . PHP_EOL); }
       $this->selectUpdatedHearingsSql = $this->prepare(static::SELECT_UPDATED_HEARINGS_SQL);
-      if (!$this->selectUpdatedHearingsSql) { die('SELECT Updated SQL Preparation Failed' . PHP_EOL); }
+      if (!$this->selectUpdatedHearingsSql) { die('SELECT Updated Hearings SQL Preparation Failed' . PHP_EOL); }
+      $this->selectHearingsByTimeSql = $this->prepare(static::SELECT_HEARINGS_BY_TIME_SQL);
+      if (!$this->selectHearingsByTimeSql) { die('SELECT Hearings By Time SQL Preparation Failed' . PHP_EOL); }
       $this->insertHearingSql = $this->prepare(static::INSERT_HEARING_SQL);
       if (!$this->insertHearingSql) { die('INSERT Hearing SQL Preparation Failed' . PHP_EOL); }
       $this->upsertHearingSql = $this->prepare(static::UPSERT_HEARING_SQL);
@@ -491,6 +500,21 @@ HERE;
       return $this->selectUpdatedHearingsSql->fetchAll(PDO::FETCH_OBJ);
     }
     $this->error = $this->selectUpdatedHearingsSql->errorInfo();
+    Logger::logger()->error('SELECT UPDATED: ', $this->error);
+    return NULL;
+  }
+
+  public function selectHearingsByTime($startTime, $endTime) {
+    $this->setupStatements();
+    if (!$this->selectHearingsByTimeSql) die('No SQL Prepared' . PHP_EOL);
+    $args = array(
+        ':startTime' => $startTime,
+        ':endTime' => $endTime,
+    );
+    if ($this->exec($this->selectHearingsByTimeSql, $args)) {
+      return $this->selectHearingsByTimeSql->fetchAll(PDO::FETCH_OBJ);
+    }
+    $this->error = $this->selectHearingsByTimeSql->errorInfo();
     Logger::logger()->error('SELECT UPDATED: ', $this->error);
     return NULL;
   }
