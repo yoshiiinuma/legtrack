@@ -127,9 +127,6 @@ HERE;
       END
 HERE;
 
-
-
-
   const DROP_TAGGED_MEASURES_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='taggedMeasures' AND xtype='U')
       DROP TABLE taggedMeasures
@@ -639,7 +636,6 @@ HERE;
       END
 HERE;
 
-
   const DROP_POSITION_PAGE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='positionPage' AND xtype='P')
       DROP PROCEDURE positionPage
@@ -843,10 +839,6 @@ HERE;
          FETCH NEXT @size ROWS ONLY;
       END
 HERE;
-
-
-
-
 
   const DROP_DEPTS_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='depts' AND xtype='U')
@@ -1167,7 +1159,6 @@ HERE;
       )
 HERE;
 
-
   const DROP_MEASURES_TABLE_SQL = <<<HERE
     IF EXISTS (SELECT * FROM sysobjects WHERE name='measures' AND xtype='U')
       DROP TABLE measures
@@ -1260,6 +1251,214 @@ HERE;
      SELECT TOP 100 * FROM measures;
 HERE;
 
+  const DROP_SP_MEASURES_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='spMeasures' AND xtype='U')
+      DROP TABLE spMeasures
+HERE;
+
+  const CREATE_SP_MEASURES_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='spMeasures' AND xtype='U')
+      CREATE TABLE spMeasures
+      (
+        id int identity(1,1),
+        year smallint NOT NULL,
+        spSessionId char(1) NOT NULL,
+        measureType nchar(3) NOT NULL,
+        measureNumber smallint NOT NULL,
+        lastUpdated int,
+        code nvarchar(64),
+        measurePdfUrl nvarchar(512),
+        measureArchiveUrl nvarchar(512),
+        measureTitle nvarchar(512),
+        reportTitle nvarchar(512),
+        bitAppropriation tinyint,
+        description nvarchar(1024),
+        status nvarchar(512),
+        introducer nvarchar(512),
+        currentReferral nvarchar(256),
+        trackingDepts nvarchar(256),
+        companion nvarchar(256),
+        CONSTRAINT PK_spMeasures PRIMARY KEY CLUSTERED (id),
+        CONSTRAINT UQ_spMeasures UNIQUE (year, spSessionId, measureType, measureNumber)
+      )
+HERE;
+
+  const CREATE_SP_MEASURES_INDEX_SQL = <<<HERE
+    CREATE INDEX spMeasures_lastupdated_idx ON spMeasures(lastUpdated);
+HERE;
+
+  const DROP_SP_MEASURES_INDEX_SQL = <<<HERE
+    DROP INDEX spMeasures_lastupdated_idx ON spMeasures;
+HERE;
+
+  const DROP_SP_TRACKEDMEASUERS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='spTrackedMeasures' AND xtype='U')
+      DROP TABLE spTrackedMeasures
+HERE;
+
+  const CREATE_SP_TRACKEDMEASURES_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='spTrackedMeasures' AND xtype='U')
+      CREATE TABLE spTrackedMeasures
+      (
+        id int identity(1,1) NOT NULL UNIQUE,
+        year smallint NOT NULL,
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
+        measureId int NOT NULL FOREIGN KEY REFERENCES spMeasures(id),
+        tracked bit DEFAULT 1,
+        billProgress nvarchar(18),
+        scrNo nvarchar(18),
+        adminBill bit DEFAULT 0,
+        dead bit DEFAULT 0,
+        confirmed bit DEFAULT 0,
+        passed bit DEFAULT 0,
+        ccr bit DEFAULT 0,
+        appropriation bit DEFAULT 0,
+        appropriationAmount nvarchar(256),
+        report bit DEFAULT 0,
+        directorAttention bit DEFAULT 0,
+        govMsgNo nvarchar(12),
+        dateToGov date,
+        actNo nvarchar(12),
+        actDate date,
+        reportingRequirement nvarchar(256),
+        reportDueDate nvarchar(12),
+        sectionsAffected nvarchar(128),
+        effectiveDate date,
+        veto bit DEFAULT 0,
+        vetoDate date,
+        vetoOverride bit DEFAULT 0,
+        vetoOverrideDate date,
+        finalBill nvarchar(128),
+        version nvarchar(48),
+        createdBy int,
+        createdAt datetime,
+        modifiedBy int,
+        modifiedAt datetime,
+        CONSTRAINT PK_spTrackedMeasures PRIMARY KEY CLUSTERED (year, deptId, measureId),
+        INDEX IX_spTrackedMeasures NONCLUSTERED (id)
+      )
+HERE;
+
+  const DROP_SP_POSITIONS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='spPositions' AND xtype='U')
+      DROP TABLE spPositions
+HERE;
+
+  const CREATE_SP_POSITIONS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='spPositions' AND xtype='U')
+      CREATE TABLE spPositions
+      (
+        id int identity(1,1) NOT NULL UNIQUE,
+        year smallint NOT NULL,
+        deptId smallint NOT NULL FOREIGN KEY REFERENCES depts(id),
+        measureId int NOT NULL FOREIGN KEY REFERENCES spMeasures(id),
+        groupId int NOT NULL FOREIGN KEY REFERENCES groups(id),
+        role nvarchar(12),
+        category nvarchar(12),
+        position nvarchar(12),
+        approvalStatus nvarchar(12),
+        status nvarchar(12),
+        assignedTo int,
+        version nvarchar(48),
+        createdBy int,
+        createdAt datetime,
+        modifiedBy int,
+        modifiedAt datetime,
+        CONSTRAINT PK_spPositions PRIMARY KEY CLUSTERED (year, deptId, measureId, groupId),
+        INDEX IX_spPositions NONCLUSTERED (id),
+        INDEX IX_spPositions_by_group NONCLUSTERED (groupId, year, deptId, measureId)
+      )
+HERE;
+
+  const DROP_SP_COMMENTS_TABLE_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='spComments' AND xtype='U')
+      DROP TABLE spComments
+HERE;
+
+  const CREATE_SP_COMMENTS_TABLE_SQL = <<<HERE
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='spComments' AND xtype='U')
+      CREATE TABLE spComments
+      (
+        year smallint NOT NULL,
+        positionId int NOT NULL FOREIGN KEY REFERENCES spPositions(id),
+        createtBy int NOT NULL FOREIGN KEY REFERENCES users(id),
+        createdAt datetime,
+        comment ntext,
+        CONSTRAINT PK_spComments PRIMARY KEY CLUSTERED (year, positionId, createdAt)
+      )
+HERE;
+
+  const DROP_SP_POSITION_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='spPositionView' AND xtype='V')
+      DROP VIEW spPositionView
+HERE;
+
+  const CREATE_SP_POSITION_VIEW_SQL = <<<HERE
+    CREATE VIEW spPositionView AS
+    SELECT p.id as positionId, t.id as trackedMeasureId, t.measureId, t.year, t.deptId, p.groupId, g.groupName,
+           t.tracked, p.role, p.category, p.position, p.approvalStatus, p.status as testimonyStatus, p.assignedTo, u.userPrincipalName as assigneePrincipalName, u.displayName as assignee,
+           t.billId, t.spSessionId, t.measureType, t.measureNumber, t.code, t.measurePdfUrl, t.measureArchiveUrl,
+           t.measureTitle, t.reportTitle, t.bitAppropriation, t.description, t.measureStatus,
+           t.introducer, t.committee, t.companion,
+           t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
+           t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
+           t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
+           t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate,
+           t.finalBill, t.version as trackedMeasureVersion, p.version as positionVersion
+      FROM spTrackedMeasureView t
+      JOIN spPositions p ON p.year = t.year
+                      AND p.deptId = t.deptId
+                      AND p.measureId = t.measureId
+      JOIN groups g on g.id = p.groupId
+      LEFT JOIN users u on u.id = p.assignedTo
+HERE;
+
+  const DROP_SP_TRACKEDMEASURE_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='spTrackedMeasureView' AND xtype='V')
+      DROP VIEW spTrackedMeasureView
+HERE;
+
+  const CREATE_SP_TRACKEDMEASURE_VIEW_SQL = <<<HERE
+    CREATE VIEW spTrackedMeasureView AS
+    SELECT t.id, t.measureId, m.year, t.deptId, t.tracked,
+           CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
+           m.spSessionId, m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+           m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status as measureStatus,
+           m.introducer, m.currentReferral as committee, m.companion,
+           t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
+           t.appropriation, t.appropriationAmount, t.report, t.directorAttention,
+           t.govMsgNo, t.dateToGov, t.actDate, t.actNo, t.reportingRequirement, t.reportDueDate,
+           t.sectionsAffected, t.effectiveDate, t.veto, t.vetoDate, t.vetoOverride, t.vetoOverrideDate,
+           t.finalBill, t.version, 1 as rowcnt
+      FROM spTrackedMeasures t
+      JOIN spMeasures m ON m.id = t.measureId
+HERE;
+
+  const DROP_SP_MEASURE_VIEW_SQL = <<<HERE
+    IF EXISTS (SELECT * FROM sysobjects WHERE name='spMeasureView' AND xtype='V')
+      DROP VIEW spMeasureView
+HERE;
+
+  const CREATE_SP_MEASURE_VIEW_SQL = <<<HERE
+    CREATE VIEW spMeasureView AS
+    SELECT m.id, m.year,
+           CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
+           m.spSessionId, m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+           m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status,
+           m.introducer, m.currentReferral as committee, m.companion,
+           ((SELECT ',' + CAST(t.deptId as nvarchar(12))
+              FROM spTrackedMeasures t
+              WHERE t.tracked = 1 AND t.measureId = m.id
+              ORDER BY t.deptId
+              FOR XML PATH('')) + ','
+           )  as trackedBy
+      FROM spMeasures m
+HERE;
+
+
+
+
+  
   public function configure($conf) {
     $this->user = $conf['SQLSRV_USER'];
     $this->pass = $conf['SQLSRV_PASS'];
