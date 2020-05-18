@@ -3,10 +3,10 @@ namespace legtrack;
 
 use \DateTime;
 
-require_once __DIR__ . 'lib/functions.php';
-require_once __DIR__ . 'lib/enum.php';
-require_once __DIR__ . 'lib/local_sqlite.php';
-require_once __DIR__ . 'lib/logger.php';
+require_once './lib/functions.php';
+require_once './lib/enum.php';
+require_once './lib/local_sqlite.php';
+require_once './lib/logger.php';
 
 function usage($argv) {
   echo "\nUASGE: php select-measures-from-local.php <env> [ALL]\n\n";

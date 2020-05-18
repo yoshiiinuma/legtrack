@@ -1,7 +1,7 @@
 <?php
 namespace legtrack;
 
-require_once __DIR__ . 'lib/logger.php';
+require_once './lib/logger.php';
 
 class Curl {
   public $debug;

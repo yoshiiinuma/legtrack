@@ -1,9 +1,9 @@
 <?php
 namespace legtrack;
 
-require_once __DIR__ . 'lib/functions.php';
-require_once __DIR__ . 'lib/curl.php';
-require_once __DIR__ . 'lib/logger.php';
+require_once './lib/functions.php';
+require_once './lib/curl.php';
+require_once './lib/logger.php';
 
 /**
  *

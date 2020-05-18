@@ -2,8 +2,8 @@
 
 namespace legtrack;
 
-require_once __DIR__ . 'lib/functions.php';
-require_once __DIR__ . 'lib/remote_mysql.php';
+require_once './lib/functions.php';
+require_once './lib/remote_mysql.php';
 
 function usage($argv) {
   echo "\nUASGE: php drop-remote-mysql.php <env>\n\n";
