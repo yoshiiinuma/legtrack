@@ -1,9 +1,9 @@
 <?php
 namespace legtrack;
 
-require_once 'lib/functions.php';
-require_once 'lib/local_sqlite.php';
-require_once 'lib/remote_mysql.php';
+require_once __DIR__ . 'lib/functions.php';
+require_once __DIR__ . 'lib/local_sqlite.php';
+require_once __DIR__ . 'lib/remote_mysql.php';
 
 function usage($argv) {
   echo "Wrong parameters were given:\n\n";

@@ -3,10 +3,10 @@ namespace legtrack;
 
 use \DateTime;
 
-require_once 'lib/functions.php';
-require_once 'lib/enum.php';
-require_once 'lib/remote_sqlsrv.php';
-require_once 'lib/logger.php';
+require_once __DIR__ . 'lib/functions.php';
+require_once __DIR__ . 'lib/enum.php';
+require_once __DIR__ . 'lib/remote_sqlsrv.php';
+require_once __DIR__ . 'lib/logger.php';
 
 function usage($argv) {
   echo "\nUASGE: php count-measures-from-sqlsrv.php <env>\n\n";

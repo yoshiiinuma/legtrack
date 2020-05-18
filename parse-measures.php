@@ -1,7 +1,7 @@
 <?php
 namespace legtrack;
 
-require_once 'lib/measure_parser.php';
+require_once __DIR__ . 'lib/measure_parser.php';
 
 if ($argc != 2) {
   print_r($argv);

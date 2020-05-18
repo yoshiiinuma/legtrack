@@ -3,7 +3,7 @@ namespace legtrack;
 use \PDO;
 use \DateTime;
 
-require_once 'lib/db_base.php';
+require_once __DIR__ . 'lib/db_base.php';
 
 class LocalSqlite extends DbBase {
   private $path;
