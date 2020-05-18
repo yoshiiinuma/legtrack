@@ -6,7 +6,7 @@ require_once __DIR__ . '/lib/functions.php';
 require_once __DIR__ . '/lib/remote_sqlsrv.php';
 
 function usage($argv) {
-  echo "\nUASGE: php ex-remove-sqlsrv.php <env>\n\n";
+  echo "\nUASGE: php ex-remove-specialsession-tables-sqlsrv.php <env>\n\n";
   echo "  env: development|test|production\n";
 }
 
@@ -24,16 +24,18 @@ $db->configure($GLOBALS);
 $db->connect();
 
 
-$db->query(RemoteSqsrv::DROP_SP_MEASURES_INDEX_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_MEASURES_INDEX_SQL);
 
-$db->query(RemoteSqsrv::DROP_SP_POSITION_VIEW_SQL);
-$db->query(RemoteSqsrv::DROP_SP_TRACKEDMEASURE_VIEW_SQL);
-$db->query(RemoteSqsrv::DROP_SP_MEASURE_VIEW_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_MEASURES_INDEX_SQL);
 
-$db->query(RemoteSqsrv::DROP_SP_COMMENTS_TABLE_SQL);
-$db->query(RemoteSqsrv::DROP_SP_POSITIONS_TABLE_SQL);
-$db->query(RemoteSqsrv::DROP_SP_TRACKEDMEASUERS_TABLE_SQL);
-$db->query(RemoteSqsrv::DROP_SP_MEASURES_TABLE_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_POSITION_VIEW_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_TRACKEDMEASURE_VIEW_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_MEASURE_VIEW_SQL);
+
+$db->query(RemoteSqlsrv::DROP_SP_COMMENTS_TABLE_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_POSITIONS_TABLE_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_TRACKEDMEASUERS_TABLE_SQL);
+$db->query(RemoteSqlsrv::DROP_SP_MEASURES_TABLE_SQL);
 
 ?>
 

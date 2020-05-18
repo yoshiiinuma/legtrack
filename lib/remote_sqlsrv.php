@@ -1,9 +1,9 @@
 <?php
-namespace legtrack;
+namespace legtrack {
 use \PDO;
 use \DateTime;
 
-require_once './lib/db_base.php';
+require_once __DIR__ . '/db_base.php';
 
 class RemoteSqlsrv extends DbBase {
   private $dsn;
@@ -1529,4 +1529,5 @@ HERE;
 
 }
 
+};
 ?>

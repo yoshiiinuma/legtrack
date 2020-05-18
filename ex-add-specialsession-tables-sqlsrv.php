@@ -2,11 +2,11 @@
 
 namespace legtrack;
 
-require_once './lib/functions.php';
-require_once './lib/remote_sqlsrv.php';
+require_once __DIR__ . '/lib/functions.php';
+require_once __DIR__ . '/lib/remote_sqlsrv.php';
 
 function usage($argv) {
-  echo "\nUASGE: php ex-add-features-sqlsrv.php <env>\n\n";
+  echo "\nUASGE: php ex-add-specialsession-tables-sqlsrv.php <env>\n\n";
   echo "  env: development|test|production\n";
 }
 
@@ -23,16 +23,16 @@ $db = new RemoteSqlsrv();
 $db->configure($GLOBALS);
 $db->connect();
 
-$db->query(RemoteSqsrv::CREATE_SP_MEASURES_TABLE_SQL);
-$db->query(RemoteSqsrv::CREATE_SP_TRACKEDMEASURES_TABLE_SQL);
-$db->query(RemoteSqsrv::CREATE_SP_POSITIONS_TABLE_SQL);
-$db->query(RemoteSqsrv::CREATE_SP_COMMENTS_TABLE_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_MEASURES_TABLE_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_TRACKEDMEASURES_TABLE_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_POSITIONS_TABLE_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_COMMENTS_TABLE_SQL);
 
-$db->query(RemoteSqsrv::CREATE_SP_MEASURES_INDEX_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_MEASURES_INDEX_SQL);
 
-$db->query(RemoteSqsrv::CREATE_SP_MEASURE_VIEW_SQL);
-$db->query(RemoteSqsrv::CREATE_SP_TRACKEDMEASURE_VIEW_SQL);
-$db->query(RemoteSqsrv::CREATE_SP_POSITION_VIEW_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_MEASURE_VIEW_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_TRACKEDMEASURE_VIEW_SQL);
+$db->query(RemoteSqlsrv::CREATE_SP_POSITION_VIEW_SQL);
 
 ?>
 

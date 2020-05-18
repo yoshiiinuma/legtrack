@@ -1,9 +1,9 @@
 <?php
 namespace legtrack;
 
-require_once './lib/functions.php';
-require_once './lib/local_sqlite.php';
-require_once './lib/remote_sqlsrv.php';
+require_once __DIR__ . '/lib/functions.php';
+require_once __DIR__ . '/lib/local_sqlite.php';
+require_once __DIR__ . '/lib/remote_sqlsrv.php';
 
 function usage($argv) {
   echo "\n\n";

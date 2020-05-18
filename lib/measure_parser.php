@@ -1,7 +1,7 @@
 <?php
 namespace legtrack;
 
-require_once './lib/base_parser.php';
+require_once __DIR__ . '/base_parser.php';
 
 class MeasureParser extends BaseParser {
   //const MTA = array("","HB","SB","HR","SR","HCR","SCR","GM");

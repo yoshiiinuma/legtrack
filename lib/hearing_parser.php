@@ -1,7 +1,7 @@
 <?php
 namespace legtrack;
 
-require_once './lib/base_parser.php';
+require_once __DIR__ . '/base_parser.php';
 
 class HearingParser extends BaseParser {
 

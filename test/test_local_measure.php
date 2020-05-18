@@ -1,9 +1,9 @@
 <?php
 namespace legtrack;
 
-require_once './lib/functions.php';
-require_once './lib/local_sqlite.php';
-require_once './lib/measure_parser.php';
+require_once __DIR__ . '/lib/functions.php';
+require_once __DIR__ . '/lib/local_sqlite.php';
+require_once __DIR__ . '/lib/measure_parser.php';
 
 loadConfig('config/test.php');
 
