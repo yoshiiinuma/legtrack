@@ -1284,11 +1284,13 @@ HERE;
 HERE;
 
   const CREATE_SP_MEASURES_INDEX_SQL = <<<HERE
-    CREATE INDEX spMeasures_lastupdated_idx ON spMeasures(lastUpdated);
+    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name='spMeasures_lastupdated_idx')
+      CREATE INDEX spMeasures_lastupdated_idx ON spMeasures(lastUpdated);
 HERE;
 
   const DROP_SP_MEASURES_INDEX_SQL = <<<HERE
-    DROP INDEX spMeasures_lastupdated_idx ON spMeasures;
+    IF EXISTS (SELECT * FROM sys.indexes WHERE name='spMeasures_lastupdated_idx')
+      DROP INDEX spMeasures_lastupdated_idx ON spMeasures;
 HERE;
 
   const DROP_SP_TRACKEDMEASUERS_TABLE_SQL = <<<HERE
@@ -1422,7 +1424,7 @@ HERE;
     CREATE VIEW spTrackedMeasureView AS
     SELECT t.id, t.measureId, m.year, t.deptId, t.tracked,
            CONCAT(TRIM(m.measureType), RIGHT('00000' + CAST(m.measureNumber as nvarchar(5)), 5)) as billId,
-           m.spSessionId, m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
+           m.spSessionId as spSessionId, m.measureType, m.measureNumber, m.code, m.measurePdfUrl, m.measureArchiveUrl,
            m.measureTitle, m.reportTitle, m.bitAppropriation, m.description, m.status as measureStatus,
            m.introducer, m.currentReferral as committee, m.companion,
            t.billProgress, t.scrNo, t.adminBill, t.dead, t.confirmed, t.passed, t.ccr,
